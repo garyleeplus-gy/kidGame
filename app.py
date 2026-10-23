@@ -2,7 +2,7 @@ import sys
 import os
 import subprocess
 
-# 自動環境檢查：支援直接執行 python app.py 或雲端 streamlit run app.py
+# 自動環境檢查：支援本地直接執行 python app.py 或雲端 streamlit run app.py
 def ensure_streamlit():
     try:
         import streamlit as st
@@ -44,8 +44,7 @@ with st.sidebar:
     - 💾 **跨裝置存檔**：點擊右上角「存檔管理」可下載 `.json` 存檔或複製通行碼。
     """)
 
-# 使用單引號三引號包覆，並確保結尾清晰無截斷風險
-GAME_HTML = '''<!DOCTYPE html>
+GAME_HTML = r'''<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -108,7 +107,7 @@ GAME_HTML = '''<!DOCTYPE html>
     .lvl-btn {
         flex: 0 0 auto; background: var(--bg-card); color: var(--sub);
         border: 1px solid rgba(255,255,255,0.1); border-radius: 7px;
-        padding: 5px 8px; font-size: 0.8rem; font-weight: bold; cursor: pointer;
+        padding: 5px 9px; font-size: 0.8rem; font-weight: bold; cursor: pointer;
     }
     .lvl-btn.active { background: var(--blue); color: #000; border-color: #fff; }
     .lvl-btn.custom { background: linear-gradient(135deg, #ff80ab, #f50057); color: #fff; }
@@ -205,7 +204,7 @@ GAME_HTML = '''<!DOCTYPE html>
 
 <div class="main-grid" id="mainGrid">
     <div class="card">
-        <div class="lvl-title" id="lvlTitle"></div>
+        <div class="lvl-title" id="lvlTitle">載入關卡中...</div>
         <div class="lvl-desc" id="lvlDesc"></div>
         <div id="stageContent"></div>
     </div>
@@ -220,12 +219,30 @@ GAME_HTML = '''<!DOCTYPE html>
 <canvas id="confettiCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:998; display:none;"></canvas>
 
 <script>
-const STORAGE_KEY = "STAR_LOGIC_ACADEMY_SAVE_V2";
+// 安全換行常數與跨瀏覽器圓角繪製函式 (100% 避免反斜線截斷與舊瀏覽器不相容)
+const NL = String.fromCharCode(10);
+const STORAGE_KEY = "STAR_LOGIC_ACADEMY_SAVE_V3";
 let appState = { currentGame: 0, currentLevel: 0, stars: {}, customLevels: {} };
+
+function drawRoundBox(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+}
 
 function loadSaveData() {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = window.localStorage.getItem(STORAGE_KEY);
         if (raw) {
             const p = JSON.parse(raw);
             appState.stars = p.stars || {};
@@ -237,7 +254,7 @@ function loadSaveData() {
 
 function saveProgress() {
     try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ stars: appState.stars, customLevels: appState.customLevels }));
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ stars: appState.stars, customLevels: appState.customLevels }));
     } catch (e) {}
     updateTotalStarsUI();
     renderLevelBar();
@@ -266,13 +283,17 @@ function awardStars(g, l, s) {
 
 function updateTotalStarsUI() {
     let total = 0;
-    for (let g = 0; g < 5; g++) for (let l = 0; l < 20; l++) total += (appState.stars[g + "_" + l] || 0);
-    document.getElementById("totalStarsBadge").innerText = `🏆 ${total} / 300 ⭐`;
+    for (let g = 0; g < 5; g++) {
+        for (let l = 0; l < 20; l++) {
+            total += (appState.stars[g + "_" + l] || 0);
+        }
+    }
+    document.getElementById("totalStarsBadge").innerText = "🏆 " + total + " / 300 ⭐";
 }
 
 function applyZoom(val) {
     document.getElementById("zoomVal").innerText = val + "%";
-    document.getElementById("mainGrid").style.transform = `scale(${val / 100})`;
+    document.getElementById("mainGrid").style.transform = "scale(" + (val / 100) + ")";
 }
 
 function openSaveModal() {
@@ -362,7 +383,7 @@ const G1_LEVELS = [
     {name:"G1-06 環狀巡航", opt:7, start:[1,5,0], desc:"沿著外圍收集水晶，善用兩段迴圈縮短指令！", grid:["1111111","1222221","1211121","1211121","1211121","1011131","1111111"]},
     {name:"G1-07 雷射初體驗", opt:6, start:[1,3,1], desc:"先走到「🔘開關」格執行「👆開關」，即可解除紅色雷射！", grid:["1111111","1111111","1111111","1025423","1111111","1111111","1111111"]},
     {name:"G1-08 雷射支線", opt:8, start:[1,5,0], desc:"先直走去最上方按下雷射開關，再轉彎通過雷射門！", grid:["1111111","1522431","1211111","1211111","1211111","1011111","1111111"]},
-    {name:"G1-09 折返解鎖", opt:9, start:[1,3,1], desc:"開關在上方小房間，進去按完開關後向後轉出來繼續前進！", grid:["1111111","1115111","1112111","1020423","1111111","1111111","1111111"]},
+    {name:"G1-09 折返解鎖", opt:9, start:[1,3,1], desc:"開關在上方小房間，進去按完開關後轉彎出來繼續前進！", grid:["1111111","1115111","1112111","1020423","1111111","1111111","1111111"]},
     {name:"G1-10 雙重防衛網", opt:8, start:[1,5,0], desc:"一個開關可以同時解除地圖上所有的雷射門！", grid:["1111111","1542431","1211111","1211111","1211111","1011111","1111111"]},
     {name:"G1-11 蟲洞初體驗", opt:4, start:[1,5,1], desc:"走進「🌀蟲洞」會瞬間移動到另一個蟲洞，且面向不變！", grid:["1111111","1622231","1111111","1111111","1111111","1022611","1111111"]},
     {name:"G1-12 蟲洞轉向", opt:6, start:[1,5,0], desc:"從下方往上走進蟲洞，出來後也是朝上喔！記得右轉拿水晶。", grid:["1111111","1111111","1162231","1111111","1611111","1011111","1111111"]},
@@ -484,7 +505,7 @@ function renderLevelBar() {
     for (let i = 0; i < 21; i++) {
         const isC = (i === 20), isA = (i === appState.currentLevel);
         const st = appState.stars[appState.currentGame + "_" + i] || 0;
-        const lbl = isC ? "🛠️ 自製關卡" : `第${i+1}關${st ? " "+"★".repeat(st) : ""}`;
+        const lbl = isC ? "🛠️ 自製關卡" : "第" + (i+1) + "關" + (st ? " " + "★".repeat(st) : "");
         html += `<button class="lvl-btn ${isC?'custom':''} ${isA?'active':''}" onclick="loadLevel(${i})">${lbl}</button>`;
     }
     document.getElementById("levelBar").innerHTML = html;
@@ -502,7 +523,7 @@ function loadLevel(lIdx) {
 
 function updatePythonBox(code, tip) {
     document.getElementById("pythonPreview").innerText = code;
-    document.getElementById("conceptBox").innerHTML = `💡 <b>運算思維小百科：</b><br>${tip}`;
+    document.getElementById("conceptBox").innerHTML = "💡 <b>運算思維小百科：</b><br>" + tip;
 }
 
 // --- 遊戲 1：星際編碼號 ---
@@ -512,7 +533,7 @@ function g1StopTimer() { if (g1State.timer) { clearTimeout(g1State.timer); g1Sta
 function initGame1(lIdx) {
     if (lIdx === 20 && appState.customLevels.g1) G1_LEVELS[20] = JSON.parse(JSON.stringify(appState.customLevels.g1));
     const lvl = G1_LEVELS[lIdx];
-    document.getElementById("lvlTitle").innerText = `🚀 ${lvl.name} 【⭐⭐⭐ 黃金目標：${lvl.opt} 個有效積木】`;
+    document.getElementById("lvlTitle").innerText = "🚀 " + lvl.name + " 【⭐⭐⭐ 黃金目標：" + lvl.opt + " 個有效積木】";
     document.getElementById("lvlDesc").innerText = lvl.desc;
     g1State.cmds = []; g1State.brush = 1;
     const customHtml = (lIdx === 20) ? `<div class="brush-bar" id="g1BrushBar">
@@ -585,9 +606,11 @@ function g1ResetBoard() {
     g1StopTimer();
     const lvl = G1_LEVELS[appState.currentLevel];
     g1State.grid = lvl.grid.map(r => r.split("").map(Number));
-    [g1State.rx, g1State.ry, g1State.rdir] = lvl.start;
+    g1State.rx = lvl.start[0]; g1State.ry = lvl.start[1]; g1State.rdir = lvl.start[2];
     g1State.laserOn = true; g1State.gotC = 0;
-    g1State.totalC = g1State.grid.flat().filter(x => x === 2).length;
+    let cnt = 0;
+    for (let y=0; y<7; y++) for (let x=0; x<7; x++) if (g1State.grid[y][x] === 2) cnt++;
+    g1State.totalC = cnt;
     g1Draw();
 }
 
@@ -613,7 +636,7 @@ function g1Draw() {
     ctx.fillStyle = "#29b6f6"; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "#fff"; ctx.stroke();
     ctx.font = "21px 'Segoe UI Emoji', sans-serif"; ctx.fillText("🤖", rx, ry);
     const dirs = [[0,-1],[1,0],[0,1],[-1,0]], arrs = ["▲","▶","▼","◀"];
-    const [dx, dy] = dirs[g1State.rdir];
+    const dx = dirs[g1State.rdir][0], dy = dirs[g1State.rdir][1];
     ctx.beginPath(); ctx.arc(rx+dx*21, ry+dy*21, 8, 0, Math.PI*2);
     ctx.fillStyle = "#ff4081"; ctx.fill();
     ctx.font = "bold 10px Consolas"; ctx.fillStyle = "#fff";
@@ -627,8 +650,8 @@ function g1Clear() { if (!g1State.timer) { g1State.cmds = []; g1ResetBoard(); g1
 function g1RenderCmds(actIdx) {
     const eff = g1State.cmds.filter(c => c !== "END_LOOP").length;
     const opt = G1_LEVELS[appState.currentLevel].opt;
-    document.getElementById("g1CmdHeader").innerText = `📋 有效積木：${eff} 個 (目標：${opt} 個)`;
-    let html = "", py = ["# 🚀 星際編碼號 Python 腳本", "import space_bot as bot\n"], ind = 0;
+    document.getElementById("g1CmdHeader").innerText = "📋 有效積木：" + eff + " 個 (目標：" + opt + " 個)";
+    let html = "", py = ["# 🚀 星際編碼號 Python 腳本", "import space_bot as bot", ""], ind = 0;
     const m = { MOVE:["⬆️ 前進","bot.move()"], LEFT:["↩️ 左轉","bot.turn_left()"], RIGHT:["↪️ 右轉","bot.turn_right()"], SWITCH:["👆 開關","bot.trigger_switch()"] };
     g1State.cmds.forEach((c, i) => {
         const cls = (i === actIdx) ? "cmd-item running" : "cmd-item";
@@ -636,14 +659,14 @@ function g1RenderCmds(actIdx) {
         else if (c.startsWith("LOOP_")) {
             const n = c.split("_")[1];
             html += `<div class="${cls}">${i+1}. ${"&nbsp;&nbsp;".repeat(ind)}🔄 重複 ${n} 次:</div>`;
-            py.push(`${"    ".repeat(ind)}for _ in range(${n}):`); ind++;
+            py.push("    ".repeat(ind) + "for _ in range(" + n + "):"); ind++;
         } else {
             html += `<div class="${cls}">${i+1}. ${"&nbsp;&nbsp;".repeat(ind)}${m[c][0]}</div>`;
-            py.push(`${"    ".repeat(ind)}${m[c][1]}`);
+            py.push("    ".repeat(ind) + m[c][1]);
         }
     });
     document.getElementById("g1CmdList").innerHTML = html || "<div style='color:#607d8b;'>尚未加入指令...</div>";
-    updatePythonBox(py.join("\n"), "使用 <code>for _ in range(N):</code> 迴圈能把重複的路線濃縮成幾行程式碼，輕鬆拿下 3 星！");
+    updatePythonBox(py.join(NL), "使用 <code>for _ in range(N):</code> 迴圈能把重複的路線濃縮成幾行程式碼，輕鬆拿下 3 星！");
 }
 
 function g1Compile(cmds) {
@@ -654,9 +677,9 @@ function g1Compile(cmds) {
             if (c === "END_LOOP") return [out, i+1];
             if (c.startsWith("LOOP_")) {
                 const n = parseInt(c.split("_")[1]);
-                const [sub, nxt] = parse(i+1);
-                for (let k = 0; k < n; k++) out.push(...sub);
-                i = nxt;
+                const res = parse(i+1);
+                for (let k = 0; k < n; k++) out.push(...res[0]);
+                i = res[1];
             } else { out.push({act:c, line:i}); i++; }
         }
         return [out, i];
@@ -679,13 +702,13 @@ function g1Run() {
             } else document.getElementById("g1Status").innerText = "🤔 還沒收集完水晶或還沒抵達終點喔！";
             return;
         }
-        const {act, line} = q[idx]; g1RenderCmds(line);
+        const item = q[idx]; g1RenderCmds(item.line);
         const dirs = [[0,-1],[1,0],[0,1],[-1,0]];
-        if (act === "LEFT") g1State.rdir = (g1State.rdir + 3) % 4;
-        else if (act === "RIGHT") g1State.rdir = (g1State.rdir + 1) % 4;
-        else if (act === "SWITCH") { if (g1State.grid[g1State.ry][g1State.rx] === 5) g1State.laserOn = !g1State.laserOn; }
-        else if (act === "MOVE") {
-            const [dx, dy] = dirs[g1State.rdir], nx = g1State.rx + dx, ny = g1State.ry + dy;
+        if (item.act === "LEFT") g1State.rdir = (g1State.rdir + 3) % 4;
+        else if (item.act === "RIGHT") g1State.rdir = (g1State.rdir + 1) % 4;
+        else if (item.act === "SWITCH") { if (g1State.grid[g1State.ry][g1State.rx] === 5) g1State.laserOn = !g1State.laserOn; }
+        else if (item.act === "MOVE") {
+            const dx = dirs[g1State.rdir][0], dy = dirs[g1State.rdir][1], nx = g1State.rx + dx, ny = g1State.ry + dy;
             if (nx<0 || nx>=7 || ny<0 || ny>=7 || g1State.grid[ny][nx]===1 || (g1State.grid[ny][nx]===4 && g1State.laserOn)) {
                 g1State.timer = null; document.getElementById("g1Status").innerText = "💥 撞上隕石或雷射了！請修改積木。"; return;
             }
@@ -708,7 +731,7 @@ let g2State = { inVals: [0,0,0,0], clicks: 0, finalOut: 0 };
 function initGame2(lIdx) {
     if (lIdx === 20 && appState.customLevels.g2) G2_LEVELS[20] = JSON.parse(JSON.stringify(appState.customLevels.g2));
     const lvl = G2_LEVELS[lIdx];
-    document.getElementById("lvlTitle").innerText = `⚡ ${lvl.name}`;
+    document.getElementById("lvlTitle").innerText = "⚡ " + lvl.name;
     document.getElementById("lvlDesc").innerText = lvl.desc;
     g2State.inVals = [0,0,0,0]; g2State.clicks = 0;
     document.getElementById("stageContent").innerHTML = `<div style="text-align:center;">
@@ -732,7 +755,8 @@ function g2Calc(t, a, b) {
 }
 
 function g2EvalAndDraw() {
-    const lvl = G2_LEVELS[appState.currentLevel], [A,B,C,D] = g2State.inVals;
+    const lvl = G2_LEVELS[appState.currentLevel];
+    const A = g2State.inVals[0], B = g2State.inVals[1], C = g2State.inVals[2], D = g2State.inVals[3];
     const out1 = g2Calc(lvl.g1, A, B);
     const out2 = (lvl.ins === 4) ? g2Calc(lvl.g2, C, D) : 0;
     const finalOut = (lvl.ins === 4) ? g2Calc(lvl.g3, out1, out2) : out1;
@@ -748,10 +772,10 @@ function g2EvalAndDraw() {
     }
     function gate(x, y, w, h, t, v) {
         ctx.fillStyle = v ? "#1e88e5" : "#263238"; ctx.strokeStyle = v ? "#69f0ae" : "#90a4ae"; ctx.lineWidth = 2.5;
-        ctx.beginPath(); ctx.roundRect(x, y, w, h, 10); ctx.fill(); ctx.stroke();
+        drawRoundBox(ctx, x, y, w, h, 10);
         ctx.fillStyle = "#fff"; ctx.font = "bold 14px 'Microsoft JhengHei'"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        ctx.fillText(`${t} 閘`, x+w/2, y+h/2-9);
-        ctx.fillStyle = v ? "#ffd54f" : "#b0bec5"; ctx.fillText(`OUT=${v}`, x+w/2, y+h/2+11);
+        ctx.fillText(t + " 閘", x+w/2, y+h/2-9);
+        ctx.fillStyle = v ? "#ffd54f" : "#b0bec5"; ctx.fillText("OUT=" + v, x+w/2, y+h/2+11);
     }
 
     if (lvl.ins === 2) {
@@ -767,22 +791,29 @@ function g2EvalAndDraw() {
     for (let i = 0; i < lvl.ins; i++) {
         const y = ys[i], v = g2State.inVals[i];
         ctx.fillStyle = v ? "#69f0ae" : "#263238"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.roundRect(25, y-22, 120, 44, 9); ctx.fill(); ctx.stroke();
+        drawRoundBox(ctx, 25, y-22, 120, 44, 9);
         ctx.fillStyle = v ? "#111" : "#fff"; ctx.font = "bold 14px 'Microsoft JhengHei'";
-        ctx.fillText(`開關 ${["A","B","C","D"][i]} = ${v}`, 85, y);
+        ctx.fillText("開關 " + ["A","B","C","D"][i] + " = " + v, 85, y);
     }
 
     ctx.beginPath(); ctx.arc(635, 190, 42, 0, Math.PI*2);
     ctx.fillStyle = finalOut ? "#ffd54f" : "#263238"; ctx.fill();
     ctx.lineWidth = 4; ctx.strokeStyle = finalOut ? "#69f0ae" : "#546e7a"; ctx.stroke();
     ctx.fillStyle = finalOut ? "#111" : "#eceff4";
-    ctx.fillText("🎯核心", 635, 180); ctx.fillText(`OUT=${finalOut}`, 635, 202);
+    ctx.fillText("🎯核心", 635, 180); ctx.fillText("OUT=" + finalOut, 635, 202);
 
-    updatePythonBox(
-        `# ⚡ 布林邏輯電路模擬\nA, B, C, D = ${A}, ${B}, ${C}, ${D}\ngate1 = calc_${lvl.g1}(A, B) # -> ${out1}\n` +
-        (lvl.ins===4 ? `gate2 = calc_${lvl.g2}(C, D) # -> ${out2}\ncore  = calc_${lvl.g3}(gate1, gate2) # -> ${finalOut}` : `core  = gate1 # -> ${finalOut}`),
-        "學會推演 <code>AND</code>、<code>OR</code>、<code>XOR</code>、<code>NAND</code>、<code>NOR</code> 真值表，能幫你寫出嚴密的程式條件判斷！"
-    );
+    const py = [
+        "# ⚡ 布林邏輯電路模擬",
+        "A, B, C, D = " + A + ", " + B + ", " + C + ", " + D,
+        "gate1 = calc_" + lvl.g1 + "(A, B) # -> " + out1
+    ];
+    if (lvl.ins === 4) {
+        py.push("gate2 = calc_" + lvl.g2 + "(C, D) # -> " + out2);
+        py.push("core  = calc_" + lvl.g3 + "(gate1, gate2) # -> " + finalOut);
+    } else {
+        py.push("core  = gate1 # -> " + finalOut);
+    }
+    updatePythonBox(py.join(NL), "學會推演 <code>AND</code>、<code>OR</code>、<code>XOR</code>、<code>NAND</code>、<code>NOR</code> 真值表，能幫你寫出嚴密的程式條件判斷！");
 }
 
 function g2CanvasClick(e) {
@@ -807,9 +838,9 @@ function g2CheckWin() {
     const lvl = G2_LEVELS[appState.currentLevel];
     if (g2State.finalOut !== 1) return alert("⚠️ 右側的能量核心目前還是 0（未啟動）喔！");
     const cnt = g2State.inVals.slice(0, lvl.ins).reduce((a,b)=>a+b, 0);
-    if (lvl.rule === "EXACT_1" && cnt !== 1) return alert(`限制：必須剛好開啟 1 個開關（目前 ${cnt} 個）！`);
-    if (lvl.rule === "EXACT_2" && cnt !== 2) return alert(`限制：必須剛好開啟 2 個開關（目前 ${cnt} 個）！`);
-    if (lvl.rule === "EXACT_3" && cnt !== 3) return alert(`限制：必須剛好開啟 3 個開關（目前 ${cnt} 個）！`);
+    if (lvl.rule === "EXACT_1" && cnt !== 1) return alert("限制：必須剛好開啟 1 個開關（目前 " + cnt + " 個）！");
+    if (lvl.rule === "EXACT_2" && cnt !== 2) return alert("限制：必須剛好開啟 2 個開關（目前 " + cnt + " 個）！");
+    if (lvl.rule === "EXACT_3" && cnt !== 3) return alert("限制：必須剛好開啟 3 個開關（目前 " + cnt + " 個）！");
     if (lvl.rule === "AT_LEAST_1" && cnt < 1) return alert("限制：至少開啟 1 個開關！");
     if (lvl.rule === "MAX_3" && cnt > 3) return alert("限制：最多開啟 3 個開關！");
     if (appState.currentLevel === 14 && g2State.inVals[0] !== 1) return alert("限制：開關 A 必須開啟！");
@@ -822,7 +853,7 @@ let g3State = { arr: [], sel: null, swaps: 0 };
 function initGame3(lIdx) {
     if (lIdx === 20 && appState.customLevels.g3) G3_LEVELS[20] = JSON.parse(JSON.stringify(appState.customLevels.g3));
     const lvl = G3_LEVELS[lIdx];
-    document.getElementById("lvlTitle").innerText = `⚖️ ${lvl.name} 【⭐⭐⭐ 黃金目標：${lvl.opt} 次交換內】`;
+    document.getElementById("lvlTitle").innerText = "⚖️ " + lvl.name + " 【⭐⭐⭐ 黃金目標：" + lvl.opt + " 次交換內】";
     document.getElementById("lvlDesc").innerText = lvl.desc;
     g3State.arr = [...lvl.arr]; g3State.sel = null; g3State.swaps = 0;
 
@@ -845,7 +876,7 @@ function initGame3(lIdx) {
 }
 
 function g3ApplyCustom() {
-    const raw = document.getElementById("g3CustomIn").value.trim().split(/\s+/).map(Number).filter(n => n>=5 && n<=99).slice(0,8);
+    const raw = document.getElementById("g3CustomIn").value.trim().split(" ").filter(x => x !== "").map(Number).filter(n => n>=5 && n<=99).slice(0,8);
     if (raw.length >= 3) { G3_LEVELS[20].arr = raw; appState.customLevels.g3 = JSON.parse(JSON.stringify(G3_LEVELS[20])); saveProgress(); initGame3(20); }
 }
 function g3ToggleAdj() { G3_LEVELS[20].adj = !G3_LEVELS[20].adj; appState.customLevels.g3 = JSON.parse(JSON.stringify(G3_LEVELS[20])); saveProgress(); initGame3(20); }
@@ -868,33 +899,40 @@ function g3Draw(code) {
     const target = g3GetTarget(), maxV = Math.max(...g3State.arr, 1);
 
     ctx.fillStyle = "#69f0ae"; ctx.font = "bold 14px Consolas"; ctx.textAlign = "center";
-    ctx.fillText(`🎯 目標排列：[ ${target.join(", ")} ]`, 350, 24);
+    ctx.fillText("🎯 目標排列：[ " + target.join(", ") + " ]", 350, 24);
 
     g3State.arr.forEach((v, i) => {
         const x1 = sx + i*w + 10, bw = w - 20, bh = Math.floor((v/maxV)*185) + 35, y2 = 290, y1 = y2 - bh;
         const isSel = (g3State.sel === i), isOk = (v === target[i]);
         ctx.fillStyle = isSel ? "#ffd54f" : (isOk ? "#00e676" : "#29b6f6");
         ctx.strokeStyle = isSel ? "#fff" : "#90caf9"; ctx.lineWidth = isSel ? 3 : 1.5;
-        ctx.beginPath(); ctx.roundRect(x1, y1, bw, bh, 8); ctx.fill(); ctx.stroke();
+        drawRoundBox(ctx, x1, y1, bw, bh, 8);
         ctx.fillStyle = "#fff"; ctx.font = "bold 15px Consolas"; ctx.fillText(String(v), x1+bw/2, y1-12);
-        ctx.fillStyle = "#4dd0e1"; ctx.font = "bold 12px sans-serif"; ctx.fillText(`[${i}]`, x1+bw/2, y2+20);
+        ctx.fillStyle = "#4dd0e1"; ctx.font = "bold 12px sans-serif"; ctx.fillText("[" + i + "]", x1+bw/2, y2+20);
     });
-    updatePythonBox(`# ⚖️ 陣列排序演算法\npotions = [${g3State.arr.join(", ")}]\ntarget  = [${target.join(", ")}]\n\n${code}`, "Python 交換陣列元素只需一行：<code>a[i], a[j] = a[j], a[i]</code>！");
+    const py = [
+        "# ⚖️ 陣列排序演算法",
+        "potions = [" + g3State.arr.join(", ") + "]",
+        "target  = [" + target.join(", ") + "]",
+        "",
+        code
+    ];
+    updatePythonBox(py.join(NL), "Python 交換陣列元素只需一行：<code>a[i], a[j] = a[j], a[i]</code>！");
 }
 
 function g3CanvasClick(e) {
     const r = e.target.getBoundingClientRect(), x = (e.clientX - r.left) * (700 / r.width);
     const n = g3State.arr.length, w = Math.floor(620 / n), sx = 40 + Math.floor((620 - w*n)/2);
     const idx = Math.floor((x - sx) / w); if (idx < 0 || idx >= n) return;
-    if (g3State.sel === null) { g3State.sel = idx; g3Draw(`# 選取 potions[${idx}]`); }
+    if (g3State.sel === null) { g3State.sel = idx; g3Draw("# 選取 potions[" + idx + "]"); }
     else if (g3State.sel === idx) { g3State.sel = null; g3Draw("# 取消選取"); }
     else {
         const i = g3State.sel, j = idx, lvl = G3_LEVELS[appState.currentLevel];
         if (lvl.adj && Math.abs(i - j) !== 1) { alert("⚠️ 本關限制只能交換相鄰的兩瓶喔！"); g3State.sel = null; g3Draw("# 違反相鄰限制"); return; }
         const tmp = g3State.arr[i]; g3State.arr[i] = g3State.arr[j]; g3State.arr[j] = tmp;
         g3State.swaps++; g3State.sel = null;
-        document.getElementById("g3Status").innerText = `已交換：${g3State.swaps} 次`;
-        g3Draw(`potions[${i}], potions[${j}] = potions[${j}], potions[${i}]`);
+        document.getElementById("g3Status").innerText = "已交換：" + g3State.swaps + " 次";
+        g3Draw("potions[" + i + "], potions[" + j + "] = potions[" + j + "], potions[" + i + "]");
         const t = g3GetTarget();
         if (g3State.arr.every((v, k) => v === t[k])) awardStars(2, appState.currentLevel, g3State.swaps <= lvl.opt ? 3 : (g3State.swaps <= lvl.opt+2 ? 2 : 1));
     }
@@ -906,10 +944,12 @@ let g4State = { pegs: [], sel: null, moves: 0, totalDisks: 0 };
 function initGame4(lIdx) {
     if (lIdx === 20 && appState.customLevels.g4) G4_LEVELS[20] = JSON.parse(JSON.stringify(appState.customLevels.g4));
     const lvl = G4_LEVELS[lIdx];
-    document.getElementById("lvlTitle").innerText = `🗼 ${lvl.name} 【⭐⭐⭐ 黃金目標：${lvl.opt} 步內】`;
+    document.getElementById("lvlTitle").innerText = "🗼 " + lvl.name + " 【⭐⭐⭐ 黃金目標：" + lvl.opt + " 步內】";
     document.getElementById("lvlDesc").innerText = lvl.desc;
     g4State.pegs = JSON.parse(JSON.stringify(lvl.pegs)); g4State.sel = null; g4State.moves = 0;
-    g4State.totalDisks = g4State.pegs.flat().length;
+    let dCnt = 0;
+    g4State.pegs.forEach(p => dCnt += p.length);
+    g4State.totalDisks = dCnt;
 
     const customHtml = (lIdx === 20) ? `<div class="brush-bar">
         <button class="brush-btn" onclick="g4Custom(2,null)">2環</button>
@@ -934,7 +974,8 @@ function initGame4(lIdx) {
 
 function g4Custom(nD, tType) {
     const lvl = G4_LEVELS[20];
-    let curN = nD || lvl.pegs.flat().length, pC = lvl.pegs.length;
+    let curN = nD || 3, pC = lvl.pegs.length;
+    if (!nD) { curN = 0; lvl.pegs.forEach(p => curN += p.length); }
     if (tType === "PEGS") pC = (pC === 3) ? 4 : 3;
     if (tType === "ADJ") lvl.adj = !lvl.adj;
     lvl.pegs = [Array.from({length:curN},(_,i)=>curN-i), ...Array.from({length:pC-1},()=>[])];
@@ -953,24 +994,26 @@ function g4Draw(code) {
         ctx.fillStyle = isT ? "#69f0ae" : "#455a64"; ctx.fillRect(cx-65, 290, 130, 12);
         ctx.fillStyle = isSel ? "#ffd54f" : "#37474f"; ctx.fillRect(cx-6, 90, 12, 200);
         ctx.fillStyle = isT ? "#69f0ae" : "#eceff4"; ctx.font = "bold 13px sans-serif"; ctx.textAlign = "center";
-        ctx.fillText(isT ? `🎯 ${pN[idx]}(終點)` : pN[idx], cx, 320);
+        ctx.fillText(isT ? "🎯 " + pN[idx] + "(終點)" : pN[idx], cx, 320);
 
         st.forEach((d, sPos) => {
             const w = 20 + d * 14, y2 = 288 - sPos * 30 - (isSel && sPos === st.length-1 ? 18 : 0);
             ctx.fillStyle = cols[(d-1)%cols.length]; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.roundRect(cx-w, y2-26, w*2, 26, 7); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = "#111"; ctx.font = "bold 12px sans-serif"; ctx.fillText(`環 ${d}`, cx, y2-13);
+            drawRoundBox(ctx, cx-w, y2-26, w*2, 26, 7);
+            ctx.fillStyle = "#111"; ctx.font = "bold 12px sans-serif"; ctx.fillText("環 " + d, cx, y2-13);
         });
     });
-    const pV = g4State.pegs.map((s,i)=>`stack_${["A","B","C","D"][i]} = [${s.join(", ")}]`).join("\n");
-    updatePythonBox(`# 🗼 堆疊 (Stack) 與遞迴\n${pV}\n\n${code}`, "柱子就是 <b>Stack（後進先出）</b>：只能從頂端 <code>pop()</code> 取出或 <code>append()</code> 放入！");
+    const py = ["# 🗼 堆疊 (Stack) 與遞迴"];
+    g4State.pegs.forEach((s, i) => py.push("stack_" + ["A","B","C","D"][i] + " = [" + s.join(", ") + "]"));
+    py.push(""); py.push(code);
+    updatePythonBox(py.join(NL), "柱子就是 <b>Stack（後進先出）</b>：只能從頂端 <code>pop()</code> 取出或 <code>append()</code> 放入！");
 }
 
 function g4CanvasClick(e) {
     const r = e.target.getBoundingClientRect(), x = (e.clientX - r.left) * (700 / r.width);
     const numP = g4State.pegs.length, idx = Math.floor(x / (700 / numP));
     if (idx < 0 || idx >= numP) return;
-    if (g4State.sel === null) { if (g4State.pegs[idx].length) { g4State.sel = idx; g4Draw(`# 選取柱 ${idx}`); } }
+    if (g4State.sel === null) { if (g4State.pegs[idx].length) { g4State.sel = idx; g4Draw("# 選取柱 " + idx); } }
     else if (g4State.sel === idx) { g4State.sel = null; g4Draw("# 取消選取"); }
     else {
         const src = g4State.sel, dst = idx, lvl = G4_LEVELS[appState.currentLevel];
@@ -978,8 +1021,8 @@ function g4CanvasClick(e) {
         const disk = g4State.pegs[src][g4State.pegs[src].length-1], top = g4State.pegs[dst][g4State.pegs[dst].length-1];
         if (top !== undefined && top < disk) { alert("⚠️ 大環不能壓在小環上面喔！"); g4State.sel = null; g4Draw("# 違反大小規則"); return; }
         g4State.pegs[src].pop(); g4State.pegs[dst].push(disk); g4State.moves++; g4State.sel = null;
-        document.getElementById("g4Status").innerText = `步數：${g4State.moves} 步`;
-        const pL = ["A","B","C","D"]; g4Draw(`d = stack_${pL[src]}.pop()\nstack_${pL[dst]}.append(d)`);
+        document.getElementById("g4Status").innerText = "步數：" + g4State.moves + " 步";
+        const pL = ["A","B","C","D"]; g4Draw("d = stack_" + pL[src] + ".pop()" + NL + "stack_" + pL[dst] + ".append(d)");
         if (g4State.pegs[lvl.target].length === g4State.totalDisks) awardStars(3, appState.currentLevel, g4State.moves <= lvl.opt ? 3 : (g4State.moves <= lvl.opt+4 ? 2 : 1));
     }
 }
@@ -990,7 +1033,7 @@ let g5State = { target: [], player: [], editTarget: false, mistakes: 0 };
 function initGame5(lIdx) {
     if (lIdx === 20 && appState.customLevels.g5) G5_LEVELS[20] = JSON.parse(JSON.stringify(appState.customLevels.g5));
     const lvl = G5_LEVELS[lIdx];
-    document.getElementById("lvlTitle").innerText = `🎨 ${lvl.name} 【二進位權重與 2D 矩陣解碼】`;
+    document.getElementById("lvlTitle").innerText = "🎨 " + lvl.name + " 【二進位權重與 2D 矩陣解碼】";
     document.getElementById("lvlDesc").innerText = "根據上方「連續亮格數」與右側「二進位加總密碼 (32, 16, 8, 4, 2, 1)」，點擊格子切換 0 與 1！";
     g5State.target = lvl.grid.map(r => r.split("").map(Number));
     g5State.player = Array.from({length:6}, ()=>[0,0,0,0,0,0]);
@@ -1037,30 +1080,35 @@ function g5Draw() {
     for (let c = 0; c < 6; c++) {
         const cx = ox + c*cs + cs/2, tC = g5State.target.map(r=>r[c]), pC = board.map(r=>r[c]);
         ctx.fillStyle = tC.every((v,i)=>v===pC[i]) ? "#69f0ae" : "#eceff4";
-        ctx.font = "bold 12px sans-serif"; ctx.fillText("連續:"+g5RLE(tC), cx, 24);
-        ctx.fillStyle = "#ffd54f"; ctx.font = "bold 12px Consolas"; ctx.fillText(`(${wts[c]})`, cx, 52);
+        ctx.font = "bold 12px sans-serif"; ctx.fillText("連續:" + g5RLE(tC), cx, 24);
+        ctx.fillStyle = "#ffd54f"; ctx.font = "bold 12px Consolas"; ctx.fillText("(" + wts[c] + ")", cx, 52);
     }
 
     for (let r = 0; r < 6; r++) {
         const ry = oy + r*cs + cs/2, tR = g5State.target[r], pR = board[r];
         const tD = tR.reduce((a,v,i)=>a+v*wts[i],0), pD = pR.reduce((a,v,i)=>a+v*wts[i],0);
         ctx.textAlign = "right"; ctx.fillStyle = tR.every((v,i)=>v===pR[i]) ? "#69f0ae" : "#eceff4";
-        ctx.font = "bold 12px sans-serif"; ctx.fillText(`列[${r}] 連續: ${g5RLE(tR)}`, ox-10, ry);
+        ctx.font = "bold 12px sans-serif"; ctx.fillText("列[" + r + "] 連續: " + g5RLE(tR), ox-10, ry);
 
         ctx.textAlign = "left"; ctx.fillStyle = (tD===pD) ? "#69f0ae" : "#ffd54f";
-        ctx.font = "bold 13px Consolas"; ctx.fillText(`${tD===pD?'✅':'👉'} 密碼:${String(tD).padStart(2,' ')} (目前:${String(pD).padStart(2,' ')})`, ox+6*cs+12, ry);
+        ctx.font = "bold 13px Consolas";
+        ctx.fillText((tD===pD?"✅":"👉") + " 密碼:" + String(tD).padStart(2," ") + " (目前:" + String(pD).padStart(2," ") + ")", ox+6*cs+12, ry);
 
         ctx.textAlign = "center";
         for (let c = 0; c < 6; c++) {
             const x1 = ox + c*cs, y1 = oy + r*cs, v = board[r][c];
             ctx.fillStyle = v ? (g5State.editTarget ? "#ff80ab" : "#29b6f6") : "#161925";
             ctx.strokeStyle = "#37474f"; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.roundRect(x1+2, y1+2, cs-4, cs-4, 6); ctx.fill(); ctx.stroke();
+            drawRoundBox(ctx, x1+2, y1+2, cs-4, cs-4, 6);
             ctx.fillStyle = v ? "#111" : "#546e7a"; ctx.font = "bold 15px Consolas"; ctx.fillText(String(v), x1+cs/2, y1+cs/2);
         }
     }
     const r0 = board[0], d0 = r0.reduce((a,v,i)=>a+v*wts[i],0);
-    updatePythonBox(`# 🎨 二維陣列與二進位\nmatrix = [\n${board.map(r=>`  [${r.join(", ")}],`).join("\n")}\n]\nrow0_dec = int("${r0.join("")}", 2) # = ${d0}`, "6 位元二進位權重由左至右為 <code>32, 16, 8, 4, 2, 1</code>，把亮起格子的權重加起來就是十進位密碼！");
+    const py = ["# 🎨 二維陣列與二進位", "matrix = ["];
+    board.forEach(r => py.push("  [" + r.join(", ") + "],"));
+    py.push("]");
+    py.push("row0_dec = int('" + r0.join("") + "', 2) # = " + d0);
+    updatePythonBox(py.join(NL), "6 位元二進位權重由左至右為 <code>32, 16, 8, 4, 2, 1</code>，把亮起格子的權重加起來就是十進位密碼！");
 }
 
 function g5CanvasClick(e) {
@@ -1083,5 +1131,5 @@ switchGame(0);
 </body>
 </html>'''
 
-components.html(GAME_HTML, height=800, scrolling=True)
+components.html(GAME_HTML, height=820, scrolling=True)
 # === 檔案結束 (請確認複製到此行) ===
