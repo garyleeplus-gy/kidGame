@@ -286,7 +286,7 @@ const NL = String.fromCharCode(10);
 const STORAGE_KEY = "STAR_LOGIC_ACADEMY_SAVE_V3";
 const TIMER_KEY = "STAR_LOGIC_PARENT_TIMER_V3";
 // 家長密碼為 8888，不顯示於任何 UI 提示中
-const PARENT_PIN = "5888";
+const PARENT_PIN = "8888";
 
 let appState = { currentGame: 0, currentLevel: 0, stars: {}, customLevels: {} };
 let timerState = { remainingSec: 1800, active: true, intervalId: null };
@@ -414,7 +414,7 @@ function fireConfetti() {
 }
 
 // ============================================================================
-// 家長倒數計時器核心邏輯 (時/分/秒 顯示 + 自動存檔關閉 + 密碼 5888 隱藏)
+// 家長倒數計時器核心邏輯 (時/分/秒 顯示 + 自動存檔關閉 + 密碼 8888 隱藏)
 // ============================================================================
 function initParentalTimer() {
     try {
