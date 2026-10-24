@@ -40,6 +40,7 @@ with st.sidebar:
     st.markdown("### 🌌 星際邏輯學院 Web 2.0")
     st.markdown("""
     - **5 大運算思維遊戲 × 各 20 關 + 自製沙盒 (共 105 關)**
+    - ⏳ **家長計時器**：頂部顯示「小時/分鐘/秒」倒數，時間到自動存檔並鎖定關閉畫面（預設家長密碼：`8888`）。
     - 📱 **手機/平板適應**：可使用頂部「🔍縮放」滑桿調整大小，支援雙指縮放。
     - 💾 **跨裝置存檔**：點擊右上角「存檔管理」可下載 `.json` 存檔或複製通行碼。
     """)
@@ -76,7 +77,7 @@ GAME_HTML = r'''<!DOCTYPE html>
         border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; gap: 8px;
     }
     .brand {
-        font-size: 1.2rem; font-weight: 900;
+        font-size: 1.15rem; font-weight: 900;
         background: linear-gradient(90deg, #ffd54f, #4dd0e1, #ff80ab);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
@@ -84,16 +85,35 @@ GAME_HTML = r'''<!DOCTYPE html>
     .nav-btn {
         background: var(--bg-card); color: var(--text);
         border: 1px solid rgba(255,255,255,0.12); border-radius: 9px;
-        padding: 6px 10px; font-size: 0.85rem; font-weight: bold; cursor: pointer;
+        padding: 6px 10px; font-size: 0.84rem; font-weight: bold; cursor: pointer;
     }
     .nav-btn.active {
         background: linear-gradient(135deg, #ffd54f, #ffb300);
         color: #111; border-color: #fff; box-shadow: 0 0 10px rgba(255,213,79,0.5);
     }
-    .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .header-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .timer-badge {
+        background: rgba(77, 208, 225, 0.15); border: 1px solid var(--cyan);
+        color: var(--cyan); padding: 4px 10px; border-radius: 20px;
+        font-weight: bold; font-size: 0.85rem; cursor: pointer;
+        font-family: Consolas, "Microsoft JhengHei", monospace;
+        transition: all 0.3s;
+    }
+    .timer-badge.warn {
+        background: rgba(255, 183, 77, 0.2); border-color: #ffb74d; color: #ffb74d;
+    }
+    .timer-badge.danger {
+        background: rgba(255, 64, 129, 0.25); border-color: #ff4081; color: #ff80ab;
+        animation: pulse 1s infinite;
+    }
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
     .star-badge {
         background: rgba(105,240,174,0.15); border: 1px solid var(--green);
-        color: var(--green); padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.86rem;
+        color: var(--green); padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;
     }
     .tool-btn {
         background: #37474f; color: #fff; border: 1px solid var(--cyan);
@@ -162,11 +182,18 @@ GAME_HTML = r'''<!DOCTYPE html>
     }
     .modal-overlay {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.78); z-index: 999; align-items: center; justify-content: center; padding: 14px;
+        background: rgba(0,0,0,0.82); z-index: 999; align-items: center; justify-content: center; padding: 14px;
     }
     .modal-box {
         background: #1a1e2e; border: 2px solid var(--cyan); border-radius: 14px;
         max-width: 500px; width: 100%; padding: 18px; text-align: center;
+    }
+    /* 時間到鎖定全螢幕遮罩 */
+    .lock-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: radial-gradient(circle at center, #1b2238 0%, #07090e 100%);
+        z-index: 2000; align-items: center; justify-content: center; padding: 20px;
+        flex-direction: column; text-align: center;
     }
     .brush-bar {
         display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px;
@@ -177,12 +204,16 @@ GAME_HTML = r'''<!DOCTYPE html>
         padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
     }
     .brush-btn.active { border-color: var(--gold); background: #3f4765; }
+    .time-input {
+        width: 65px; background: #090b10; color: #69f0ae; border: 1px solid #4dd0e1;
+        border-radius: 6px; padding: 6px; font-size: 1rem; text-align: center; font-weight: bold;
+    }
 </style>
 </head>
 <body>
 
 <div class="top-header">
-    <div class="brand">🚀 星際邏輯學院 <span style="font-size:0.78rem; color:#4dd0e1;">105關卡旗艦版</span></div>
+    <div class="brand">🚀 星際邏輯學院 <span style="font-size:0.75rem; color:#4dd0e1;">105關旗艦版</span></div>
     <div class="nav-tabs" id="gameTabs">
         <button class="nav-btn active" onclick="switchGame(0)">1️⃣ 星際編碼號</button>
         <button class="nav-btn" onclick="switchGame(1)">2️⃣ 光子邏輯閘</button>
@@ -191,8 +222,11 @@ GAME_HTML = r'''<!DOCTYPE html>
         <button class="nav-btn" onclick="switchGame(4)">5️⃣ 像素解碼器</button>
     </div>
     <div class="header-right">
+        <div class="timer-badge" id="timerBadge" onclick="openTimerModal()" title="點擊設定家長倒數計時器">
+            ⏳ 00時 30分 00秒
+        </div>
         <div style="display:flex; align-items:center; gap:3px; font-size:0.8rem; color:#b0bec5;">
-            🔍縮放:<input type="range" min="65" max="135" value="100" style="width:70px;" oninput="applyZoom(this.value)">
+            🔍縮放:<input type="range" min="65" max="135" value="100" style="width:65px;" oninput="applyZoom(this.value)">
             <span id="zoomVal">100%</span>
         </div>
         <div class="star-badge" id="totalStarsBadge">🏆 0 / 300 ⭐</div>
@@ -215,15 +249,223 @@ GAME_HTML = r'''<!DOCTYPE html>
     </div>
 </div>
 
+<!-- 一般彈跳視窗 -->
 <div class="modal-overlay" id="modalOverlay"><div class="modal-box" id="modalContent"></div></div>
+
+<!-- 家長計時器時間到鎖定與關閉畫面 -->
+<div class="lock-overlay" id="lockOverlay">
+    <div style="max-width:480px; background:#181c2b; border:2px solid #ffd54f; border-radius:18px; padding:28px; box-shadow:0 12px 45px rgba(0,0,0,0.85);">
+        <div style="font-size:3.5rem; margin-bottom:8px;">⏰</div>
+        <h2 style="color:#ffd54f; margin:0 0 10px 0;">今日遊玩時間已到！</h2>
+        <p style="color:#69f0ae; font-weight:bold; font-size:1rem; margin-bottom:8px;">
+            ✅ 系統已自動為您完成闖關進度存檔並匯出備份！
+        </p>
+        <p style="color:#b0bec5; font-size:0.9rem; line-height:1.5; margin-bottom:18px;">
+            優秀的太空工程師也需要讓眼睛休息喔！請離開螢幕遠眺休息。<br>
+            （若家長需延長使用時間，請輸入家長密碼解鎖）
+        </p>
+        <div style="display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap;">
+            <input type="password" id="unlockPinInput" placeholder="家長密碼(預設8888)" style="background:#090b10; color:#fff; border:1px solid #4dd0e1; border-radius:8px; padding:8px 12px; width:165px; text-align:center;">
+            <button class="cmd-btn" style="background:#69f0ae; padding:8px 16px;" onclick="parentUnlockTime()">🔓 延長 30 分鐘</button>
+        </div>
+        <div style="margin-top:12px;">
+            <button class="cmd-btn" style="background:#64b5f6; padding:7px 14px; font-size:0.82rem;" onclick="downloadJsonSave()">⬇️ 再次下載 .json 存檔備份</button>
+        </div>
+    </div>
+</div>
+
 <canvas id="confettiCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:998; display:none;"></canvas>
 
 <script>
-// 安全換行常數與跨瀏覽器圓角繪製函式 (100% 避免反斜線截斷與舊瀏覽器不相容)
 const NL = String.fromCharCode(10);
 const STORAGE_KEY = "STAR_LOGIC_ACADEMY_SAVE_V3";
-let appState = { currentGame: 0, currentLevel: 0, stars: {}, customLevels: {} };
+const TIMER_KEY = "STAR_LOGIC_PARENT_TIMER_V3";
+const PARENT_PIN = "8888";
 
+let appState = { currentGame: 0, currentLevel: 0, stars: {}, customLevels: {} };
+let timerState = {
+    remainingSec: 1800, // 預設 30 分鐘 (1800秒)
+    active: true,
+    intervalId: null
+};
+
+// ============================================================================
+// 家長倒數計時器核心邏輯 (時/分/秒 顯示 + 自動存檔關閉)
+// ============================================================================
+function initParentalTimer() {
+    try {
+        const savedTimer = window.localStorage.getItem(TIMER_KEY);
+        if (savedTimer) {
+            const p = JSON.parse(savedTimer);
+            if (typeof p.remainingSec === "number") {
+                timerState.remainingSec = p.remainingSec;
+            }
+            if (typeof p.active === "boolean") {
+                timerState.active = p.active;
+            }
+        }
+    } catch (e) {}
+
+    if (timerState.remainingSec <= 0 && timerState.active) {
+        triggerTimeUpLock(false);
+    } else {
+        updateTimerBadgeUI();
+        startTimerLoop();
+    }
+}
+
+function saveTimerState() {
+    try {
+        window.localStorage.setItem(TIMER_KEY, JSON.stringify({
+            remainingSec: timerState.remainingSec,
+            active: timerState.active
+        }));
+    } catch (e) {}
+}
+
+function formatHMS(totalSec) {
+    const s = Math.max(0, Math.floor(totalSec));
+    const hrs = Math.floor(s / 3600);
+    const mins = Math.floor((s % 3600) / 60);
+    const secs = s % 60;
+    const hh = String(hrs).padStart(2, "0");
+    const mm = String(mins).padStart(2, "0");
+    const ss = String(secs).padStart(2, "0");
+    return hh + "時 " + mm + "分 " + ss + "秒";
+}
+
+function updateTimerBadgeUI() {
+    const badge = document.getElementById("timerBadge");
+    if (!badge) return;
+    if (!timerState.active) {
+        badge.innerText = "⏳ 計時器: 未啟用 (點擊設定)";
+        badge.className = "timer-badge";
+        return;
+    }
+    badge.innerText = "⏳ " + formatHMS(timerState.remainingSec);
+    if (timerState.remainingSec <= 60) {
+        badge.className = "timer-badge danger";
+    } else if (timerState.remainingSec <= 300) {
+        badge.className = "timer-badge warn";
+    } else {
+        badge.className = "timer-badge";
+    }
+}
+
+function startTimerLoop() {
+    if (timerState.intervalId) clearInterval(timerState.intervalId);
+    timerState.intervalId = setInterval(function() {
+        if (!timerState.active) return;
+        if (timerState.remainingSec > 0) {
+            timerState.remainingSec--;
+            updateTimerBadgeUI();
+            if (timerState.remainingSec % 5 === 0) saveTimerState();
+            if (timerState.remainingSec <= 0) {
+                triggerTimeUpLock(true);
+            }
+        }
+    }, 1000);
+}
+
+function triggerTimeUpLock(autoDownload) {
+    if (timerState.intervalId) clearInterval(timerState.intervalId);
+    g1StopTimer();
+    timerState.remainingSec = 0;
+    saveTimerState();
+    saveProgress();
+    updateTimerBadgeUI();
+
+    if (autoDownload) {
+        try { downloadJsonSave(); } catch (e) {}
+    }
+
+    document.getElementById("lockOverlay").style.display = "flex";
+    try {
+        window.close();
+    } catch (e) {}
+}
+
+function parentUnlockTime() {
+    const pin = document.getElementById("unlockPinInput").value.trim();
+    if (pin !== PARENT_PIN) {
+        alert("家長密碼錯誤！（預設密碼為 8888）");
+        return;
+    }
+    document.getElementById("unlockPinInput").value = "";
+    timerState.remainingSec = 1800;
+    timerState.active = true;
+    saveTimerState();
+    document.getElementById("lockOverlay").style.display = "none";
+    updateTimerBadgeUI();
+    startTimerLoop();
+}
+
+function openTimerModal() {
+    const curS = Math.max(0, timerState.remainingSec);
+    const h = Math.floor(curS / 3600);
+    const m = Math.floor((curS % 3600) / 60);
+    const s = curS % 60;
+
+    showModal(`
+        <h3 style="color:#ffd54f; margin-top:0;">⏳ 家長護眼計時器設定</h3>
+        <p style="font-size:0.85rem; color:#b0bec5; line-height:1.4;">
+            設定今日允許的總遊玩時數（<b>小時 / 分鐘 / 秒</b>）。<br>
+            倒數結束時將<b>自動儲存進度、匯出備份並關閉鎖定畫面</b>。
+        </p>
+        <div style="display:flex; justify-content:center; align-items:center; gap:6px; margin:14px 0;">
+            <input type="number" id="tHr" class="time-input" min="0" max="12" value="${h}"> <span>小時</span>
+            <input type="number" id="tMin" class="time-input" min="0" max="59" value="${m}"> <span>分鐘</span>
+            <input type="number" id="tSec" class="time-input" min="0" max="59" value="${s}"> <span>秒</span>
+        </div>
+        <div style="display:flex; gap:6px; justify-content:center; margin-bottom:12px; flex-wrap:wrap;">
+            <button class="brush-btn" onclick="setQuickTime(0,15,0)">快速：15分鐘</button>
+            <button class="brush-btn" onclick="setQuickTime(0,30,0)">快速：30分鐘</button>
+            <button class="brush-btn" onclick="setQuickTime(1,0,0)">快速：1小時</button>
+            <button class="brush-btn" onclick="setQuickTime(0,0,10)">測試：10秒鐘</button>
+        </div>
+        <div style="margin-bottom:12px;">
+            <input type="password" id="parentPinSet" placeholder="輸入家長密碼(預設8888)" style="background:#090b10; color:#fff; border:1px solid #4dd0e1; border-radius:6px; padding:6px 10px; width:180px; text-align:center;">
+        </div>
+        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button class="cmd-btn" style="background:#69f0ae; padding:8px 16px;" onclick="applyTimerSetting(true)">▶️ 啟動倒數計時</button>
+            <button class="cmd-btn" style="background:#ffb74d; padding:8px 14px;" onclick="applyTimerSetting(false)">⏸️ 暫停計時器</button>
+            <button class="cmd-btn" style="background:#b0bec5; padding:8px 14px;" onclick="closeModal()">取消</button>
+        </div>
+    `);
+}
+
+function setQuickTime(h, m, s) {
+    document.getElementById("tHr").value = h;
+    document.getElementById("tMin").value = m;
+    document.getElementById("tSec").value = s;
+}
+
+function applyTimerSetting(enableFlag) {
+    const pin = document.getElementById("parentPinSet").value.trim();
+    if (pin !== PARENT_PIN) {
+        alert("⚠️ 請輸入正確的家長密碼（預設為 8888）以變更計時設定！");
+        return;
+    }
+    const h = Math.max(0, parseInt(document.getElementById("tHr").value) || 0);
+    const m = Math.max(0, parseInt(document.getElementById("tMin").value) || 0);
+    const s = Math.max(0, parseInt(document.getElementById("tSec").value) || 0);
+    const total = h * 3600 + m * 60 + s;
+
+    if (enableFlag && total <= 0) {
+        alert("請設定至少 1 秒以上的倒數時間！");
+        return;
+    }
+    timerState.remainingSec = total;
+    timerState.active = enableFlag;
+    saveTimerState();
+    updateTimerBadgeUI();
+    if (enableFlag) startTimerLoop();
+    closeModal();
+}
+
+// ============================================================================
+// 跨瀏覽器繪圖與存檔核心
+// ============================================================================
 function drawRoundBox(ctx, x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -1126,6 +1368,7 @@ function g5CanvasClick(e) {
 }
 
 loadSaveData();
+initParentalTimer();
 switchGame(0);
 </script>
 </body>
