@@ -285,7 +285,7 @@ GAME_HTML = r'''<!DOCTYPE html>
 const NL = String.fromCharCode(10);
 const STORAGE_KEY = "STAR_LOGIC_ACADEMY_SAVE_V3";
 const TIMER_KEY = "STAR_LOGIC_PARENT_TIMER_V3";
-// 家長密碼為 5888，不顯示於任何 UI 提示中
+// 家長密碼為 8888，不顯示於任何 UI 提示中
 const PARENT_PIN = "5888";
 
 let appState = { currentGame: 0, currentLevel: 0, stars: {}, customLevels: {} };
