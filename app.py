@@ -251,6 +251,49 @@ GAME_HTML = r'''<!DOCTYPE html>
         width: 65px; background: #090b10; color: #69f0ae; border: 1px solid #4dd0e1;
         border-radius: 6px; padding: 6px; font-size: 1rem; text-align: center; font-weight: bold;
     }
+
+    /* ================= 手機版 (寬度 <= 768px) 專屬操作優化 ================= */
+    @media (max-width: 768px) {
+        body { padding: 4px; }
+        /* 1. 頂部導覽列緊湊化，5個遊戲按鈕改為單行左右滑動，不佔垂直空間 */
+        .top-header { padding: 6px 8px; gap: 6px; }
+        .brand { font-size: 1rem; width: 100%; text-align: center; }
+        .nav-tabs {
+            display: flex; flex-wrap: nowrap; overflow-x: auto;
+            width: 100%; gap: 4px; padding-bottom: 2px;
+        }
+        .nav-btn { flex: 0 0 auto; padding: 5px 8px; font-size: 0.78rem; }
+        .header-right { width: 100%; justify-content: space-between; gap: 4px; }
+        .zoom-box { display: none !important; } /* 手機隱藏縮放滑桿，避免破版 */
+        .timer-badge, .star-badge, .tool-btn { font-size: 0.75rem; padding: 3px 7px; }
+
+        /* 2. 舞台邊距縮小，爭取最大觸控面積 */
+        .stage-card { padding: 8px 6px; }
+        .stage-header { margin-bottom: 6px; }
+        .lvl-title { font-size: 1rem; }
+        .lvl-desc { font-size: 0.8rem; }
+        .game-flex { gap: 8px; }
+
+        /* 3. 第一關地圖適度縮小至 290px，讓「地圖」與「下方積木按鈕」同時顯示在一個手機畫面內！ */
+        #g1Canvas { width: min(82vw, 290px) !important; height: min(82vw, 290px) !important; }
+
+        /* 4. 動作積木面板解除 548px 高度限制，積木改為「4欄×2排」拇指好按排列 */
+        .ctrl-box {
+            flex: 1 1 100%; max-width: 100%; min-height: auto;
+            padding: 8px; border-radius: 10px;
+        }
+        .block-grid {
+            grid-template-columns: repeat(4, 1fr); gap: 5px; margin-bottom: 6px;
+        }
+        .cmd-btn { padding: 8px 4px; font-size: 0.76rem; border-radius: 7px; }
+        .cmd-list { min-height: 85px; max-height: 105px; font-size: 0.8rem; padding: 6px; }
+        .status-bar { font-size: 0.8rem; padding: 6px 8px; margin-top: 5px; }
+
+        /* 5. 底部 Python 演算法透視窗緊湊化 */
+        .bottom-algo-dock { padding: 8px 10px; gap: 8px; }
+        .code-box { height: 95px; font-size: 0.78rem; }
+        .concept-box { font-size: 0.78rem; padding: 8px; }
+    }
 </style>
 </head>
 <body>
@@ -269,7 +312,7 @@ GAME_HTML = r'''<!DOCTYPE html>
         <div class="timer-badge" id="timerBadge" onclick="openTimerModal()" title="點擊設定家長倒數計時器">
             ⏳ 00時 30分 00秒
         </div>
-        <div style="display:flex; align-items:center; gap:3px; font-size:0.8rem; color:#b0bec5;">
+        <div class="zoom-box" style="display:flex; align-items:center; gap:3px; font-size:0.8rem; color:#b0bec5;">
             🔍縮放:<input type="range" min="65" max="135" value="100" style="width:60px;" oninput="applyZoom(this.value)">
             <span id="zoomVal">100%</span>
         </div>
@@ -948,9 +991,9 @@ function initGame1(lIdx) {
     </div>` : "";
 
     document.getElementById("stageContent").innerHTML = `<div class="game-flex">
-        <div style="display:flex; flex-direction:column; justify-content:space-between;">
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:space-between; width:100%; max-width:${G1_CANVAS_SIZE}px;">
             <canvas id="g1Canvas" width="${G1_CANVAS_SIZE}" height="${G1_CANVAS_SIZE}"></canvas>
-            <div class="status-bar" id="g1Status" style="width:${G1_CANVAS_SIZE}px; max-width:100%;">🤖 機器人就緒！請在右側點擊積木編排程式。</div>
+            <div class="status-bar" id="g1Status" style="width:100%;">🤖 機器人就緒！請點擊積木編排程式。</div>
             ${customHtml}
         </div>
         <div class="ctrl-box">
