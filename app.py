@@ -40,10 +40,10 @@ with st.sidebar:
     st.markdown("### 🌌 星際邏輯學院 Web 2.0")
     st.markdown("""
     - **5 大運算思維遊戲 × 各 20 關 + 自製沙盒 (共 105 關)**
-    - 🔊 **聲光特效版**：內建太空合成音效、霓虹光影與煙火粒子動畫。
+    - 🎯 **局部直觀動作回饋**：解題每一步皆在格內/物件旁顯示清晰局部軌跡與指示，過關才觸發全螢幕煙火。
     - ⏳ **家長計時器**：頂部顯示「小時/分鐘/秒」倒數，時間到自動存檔並鎖定畫面（需家長授權密碼解鎖）。
     - 📱 **手機/平板適應**：可使用頂部「🔍縮放」滑桿調整大小，支援雙指縮放。
-    - 💾 **跨裝置存檔**：點擊右上角「存檔管理」可下載 `.json` 存檔或複製通行碼。
+    - 💾 **跨裝置存檔**：點擊右上角「存檔」可下載 `.json` 存檔或複製通行碼。
     """)
 
 GAME_HTML = r'''<!DOCTYPE html>
@@ -74,27 +74,25 @@ GAME_HTML = r'''<!DOCTYPE html>
     }
     .top-header {
         display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-        background: var(--bg-panel); border: 1px solid rgba(100,181,246,0.4);
+        background: var(--bg-panel); border: 1px solid rgba(100,181,246,0.35);
         border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; gap: 8px;
-        box-shadow: 0 0 20px rgba(77, 208, 225, 0.15);
     }
     .brand {
         font-size: 1.15rem; font-weight: 900;
         background: linear-gradient(90deg, #ffd54f, #4dd0e1, #ff80ab);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        text-shadow: 0 0 12px rgba(255,213,79,0.3);
     }
     .nav-tabs { display: flex; flex-wrap: wrap; gap: 5px; }
     .nav-btn {
         background: var(--bg-card); color: var(--text);
         border: 1px solid rgba(255,255,255,0.12); border-radius: 9px;
         padding: 6px 10px; font-size: 0.84rem; font-weight: bold; cursor: pointer;
-        transition: all 0.2s;
+        transition: all 0.15s;
     }
-    .nav-btn:hover { border-color: var(--cyan); box-shadow: 0 0 8px rgba(77,208,225,0.4); }
+    .nav-btn:hover { border-color: var(--cyan); }
     .nav-btn.active {
         background: linear-gradient(135deg, #ffd54f, #ffb300);
-        color: #111; border-color: #fff; box-shadow: 0 0 14px rgba(255,213,79,0.7);
+        color: #111; border-color: #fff;
     }
     .header-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .timer-badge {
@@ -102,44 +100,22 @@ GAME_HTML = r'''<!DOCTYPE html>
         color: var(--cyan); padding: 4px 10px; border-radius: 20px;
         font-weight: bold; font-size: 0.85rem; cursor: pointer;
         font-family: Consolas, "Microsoft JhengHei", monospace;
-        box-shadow: 0 0 10px rgba(77,208,225,0.25);
-        transition: all 0.3s;
     }
     .timer-badge.warn {
         background: rgba(255, 183, 77, 0.2); border-color: #ffb74d; color: #ffb74d;
-        box-shadow: 0 0 12px rgba(255,183,77,0.5);
     }
     .timer-badge.danger {
         background: rgba(255, 64, 129, 0.25); border-color: #ff4081; color: #ff80ab;
-        box-shadow: 0 0 15px rgba(255,64,129,0.8);
-        animation: pulse 0.8s infinite;
-    }
-    @keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.06); }
-        100% { transform: scale(1); }
-    }
-    @keyframes errShake {
-        0%, 100% { transform: translateX(0); }
-        20%, 60% { transform: translateX(-8px); }
-        40%, 80% { transform: translateX(8px); }
-    }
-    .shake-Error {
-        animation: errShake 0.4s ease;
-        border-color: #ff4081 !important;
-        box-shadow: 0 0 25px rgba(255, 64, 129, 0.85) !important;
     }
     .star-badge {
         background: rgba(105,240,174,0.15); border: 1px solid var(--green);
         color: var(--green); padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;
-        box-shadow: 0 0 10px rgba(105,240,174,0.25);
     }
     .tool-btn {
         background: #37474f; color: #fff; border: 1px solid var(--cyan);
         padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: bold;
-        transition: 0.2s;
     }
-    .tool-btn:hover { background: var(--cyan); color: #111; box-shadow: 0 0 10px var(--cyan); }
+    .tool-btn:hover { background: var(--cyan); color: #111; }
     .level-bar {
         display: flex; align-items: center; gap: 5px; overflow-x: auto;
         background: var(--bg-panel); padding: 7px 10px; border-radius: 11px;
@@ -150,7 +126,7 @@ GAME_HTML = r'''<!DOCTYPE html>
         border: 1px solid rgba(255,255,255,0.1); border-radius: 7px;
         padding: 5px 9px; font-size: 0.8rem; font-weight: bold; cursor: pointer;
     }
-    .lvl-btn.active { background: var(--blue); color: #000; border-color: #fff; box-shadow: 0 0 10px var(--blue); }
+    .lvl-btn.active { background: var(--blue); color: #000; border-color: #fff; }
     .lvl-btn.custom { background: linear-gradient(135deg, #ff80ab, #f50057); color: #fff; }
     .main-grid {
         display: grid; grid-template-columns: 1fr 340px; gap: 10px;
@@ -160,15 +136,13 @@ GAME_HTML = r'''<!DOCTYPE html>
     .card {
         background: var(--bg-panel); border-radius: 14px;
         border: 1px solid rgba(100,181,246,0.22); padding: 12px;
-        box-shadow: 0 6px 24px rgba(0,0,0,0.5);
-        transition: border-color 0.2s, box-shadow 0.2s;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.45);
     }
-    .lvl-title { font-size: 1.15rem; font-weight: bold; color: var(--gold); margin-bottom: 4px; text-shadow: 0 0 8px rgba(255,213,79,0.3); }
+    .lvl-title { font-size: 1.15rem; font-weight: bold; color: var(--gold); margin-bottom: 4px; }
     .lvl-desc { font-size: 0.9rem; color: var(--sub); margin-bottom: 10px; line-height: 1.4; }
     .game-flex { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; justify-content: center; }
     canvas {
-        background: #0b0e17; border-radius: 12px; border: 2px solid rgba(100,181,246,0.45);
-        box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 0 15px rgba(100,181,246,0.2);
+        background: #0b0e17; border-radius: 12px; border: 2px solid rgba(100,181,246,0.4);
         max-width: 100%; height: auto; touch-action: manipulation;
     }
     .ctrl-box {
@@ -179,21 +153,25 @@ GAME_HTML = r'''<!DOCTYPE html>
     .cmd-btn {
         border: none; border-radius: 8px; padding: 8px 6px;
         font-size: 0.88rem; font-weight: bold; cursor: pointer; color: #111;
-        transition: transform 0.1s, box-shadow 0.2s;
+        transition: transform 0.08s, filter 0.15s;
     }
-    .cmd-btn:hover { box-shadow: 0 0 12px rgba(255,255,255,0.4); }
-    .cmd-btn:active { transform: scale(0.93); }
+    .cmd-btn:hover { filter: brightness(1.1); }
+    .cmd-btn:active { transform: scale(0.95); }
     .cmd-list {
         background: #090b10; border-radius: 8px; padding: 6px;
         height: 185px; overflow-y: auto; font-family: Consolas, monospace;
         font-size: 0.86rem; border: 1px solid #2c3146; margin-top: 5px;
     }
     .cmd-item { padding: 3px 5px; border-radius: 4px; }
-    .cmd-item.running { background: rgba(255,128,171,0.35); border-left: 3px solid var(--pink); color: #fff; box-shadow: 0 0 8px rgba(255,128,171,0.5); }
+    .cmd-item.running { background: rgba(255,213,79,0.28); border-left: 4px solid var(--gold); color: #fff; font-weight: bold; }
     .status-bar {
         margin-top: 8px; padding: 7px 10px; border-radius: 8px;
         background: rgba(105,240,174,0.12); border-left: 4px solid var(--green);
         font-weight: bold; font-size: 0.88rem; color: var(--green);
+        transition: all 0.2s;
+    }
+    .status-bar.err {
+        background: rgba(255, 128, 171, 0.15); border-left-color: var(--pink); color: var(--pink);
     }
     .code-box {
         background: #090b10; color: #69f0ae; font-family: Consolas, monospace;
@@ -212,7 +190,6 @@ GAME_HTML = r'''<!DOCTYPE html>
     .modal-box {
         background: #1a1e2e; border: 2px solid var(--cyan); border-radius: 14px;
         max-width: 500px; width: 100%; padding: 18px; text-align: center;
-        box-shadow: 0 0 35px rgba(77, 208, 225, 0.45);
     }
     /* 時間到鎖定全螢幕遮罩 */
     .lock-overlay {
@@ -229,7 +206,7 @@ GAME_HTML = r'''<!DOCTYPE html>
         background: #2c3146; color: #fff; border: 1px solid transparent;
         padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
     }
-    .brush-btn.active { border-color: var(--gold); background: #3f4765; box-shadow: 0 0 8px var(--gold); }
+    .brush-btn.active { border-color: var(--gold); background: #3f4765; }
     .time-input {
         width: 65px; background: #090b10; color: #69f0ae; border: 1px solid #4dd0e1;
         border-radius: 6px; padding: 6px; font-size: 1rem; text-align: center; font-weight: bold;
@@ -239,7 +216,7 @@ GAME_HTML = r'''<!DOCTYPE html>
 <body>
 
 <div class="top-header">
-    <div class="brand">🚀 星際邏輯學院 <span style="font-size:0.75rem; color:#4dd0e1;">105關聲光旗艦版</span></div>
+    <div class="brand">🚀 星際邏輯學院 <span style="font-size:0.75rem; color:#4dd0e1;">105關旗艦版</span></div>
     <div class="nav-tabs" id="gameTabs">
         <button class="nav-btn active" onclick="switchGame(0)">1️⃣ 星際編碼號</button>
         <button class="nav-btn" onclick="switchGame(1)">2️⃣ 光子邏輯閘</button>
@@ -281,7 +258,7 @@ GAME_HTML = r'''<!DOCTYPE html>
 
 <!-- 家長計時器時間到鎖定與關閉畫面 (密碼完全隱藏) -->
 <div class="lock-overlay" id="lockOverlay">
-    <div style="max-width:480px; background:#181c2b; border:2px solid #ffd54f; border-radius:18px; padding:28px; box-shadow:0 0 50px rgba(255,213,79,0.5);">
+    <div style="max-width:480px; background:#181c2b; border:2px solid #ffd54f; border-radius:18px; padding:28px;">
         <div style="font-size:3.5rem; margin-bottom:8px;">⏰</div>
         <h2 style="color:#ffd54f; margin:0 0 10px 0;">今日遊玩時間已到！</h2>
         <p style="color:#69f0ae; font-weight:bold; font-size:1rem; margin-bottom:8px;">
@@ -301,21 +278,21 @@ GAME_HTML = r'''<!DOCTYPE html>
     </div>
 </div>
 
-<!-- 頂層煙火與星光粒子特效 Canvas (z-index: 3000 確保顯示在所有視窗最上方) -->
+<!-- 過關專用慶祝煙火 Canvas (僅在過關 awardStars 時啟動，平時完全隱藏不干擾操作) -->
 <canvas id="confettiCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:3000; display:none;"></canvas>
 
 <script>
 const NL = String.fromCharCode(10);
 const STORAGE_KEY = "STAR_LOGIC_ACADEMY_SAVE_V3";
 const TIMER_KEY = "STAR_LOGIC_PARENT_TIMER_V3";
-// 家長密碼已改為 5888，且不在任何介面文字中顯示
+// 家長密碼為 5888，不顯示於任何 UI 提示中
 const PARENT_PIN = "5888";
 
 let appState = { currentGame: 0, currentLevel: 0, stars: {}, customLevels: {} };
 let timerState = { remainingSec: 1800, active: true, intervalId: null };
 
 // ============================================================================
-// Web Audio API 太空聲光音效合成器 (免外部音檔，100% 瀏覽器原生發聲)
+// Web Audio API 太空音效合成器 (精準回饋每一步動作)
 // ============================================================================
 let audioCtx = null;
 let soundEnabled = true;
@@ -327,13 +304,9 @@ function getAudioCtx() {
             const AC = window.AudioContext || window.webkitAudioContext;
             if (AC) audioCtx = new AC();
         }
-        if (audioCtx && audioCtx.state === "suspended") {
-            audioCtx.resume();
-        }
+        if (audioCtx && audioCtx.state === "suspended") audioCtx.resume();
         return audioCtx;
-    } catch (e) {
-        return null;
-    }
+    } catch (e) { return null; }
 }
 
 function toggleSound() {
@@ -357,10 +330,8 @@ function playTone(freq, type, duration, vol, slideFreq) {
         const gain = ctx.createGain();
         osc.type = type || "sine";
         osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        if (slideFreq) {
-            osc.frequency.exponentialRampToValueAtTime(slideFreq, ctx.currentTime + duration);
-        }
-        gain.gain.setValueAtTime(vol || 0.12, ctx.currentTime);
+        if (slideFreq) osc.frequency.exponentialRampToValueAtTime(slideFreq, ctx.currentTime + duration);
+        gain.gain.setValueAtTime(vol || 0.1, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
         osc.connect(gain);
         gain.connect(ctx.destination);
@@ -369,125 +340,77 @@ function playTone(freq, type, duration, vol, slideFreq) {
     } catch (e) {}
 }
 
-function sfxClick() { playTone(660, "triangle", 0.08, 0.12, 880); }
-function sfxStep() { playTone(340, "sine", 0.09, 0.1, 440); }
-function sfxTurn() { playTone(480, "triangle", 0.1, 0.1, 360); }
+function sfxClick() { playTone(620, "triangle", 0.06, 0.09, 780); }
+function sfxStep() { playTone(360, "sine", 0.07, 0.08, 440); }
+function sfxTurn() { playTone(460, "triangle", 0.08, 0.08, 350); }
 function sfxCrystal() {
-    playTone(987.77, "sine", 0.12, 0.16);
-    setTimeout(function() { playTone(1318.5, "sine", 0.25, 0.18); }, 90);
+    playTone(987.77, "sine", 0.1, 0.14);
+    setTimeout(function() { playTone(1318.5, "sine", 0.18, 0.15); }, 80);
 }
-function sfxLaser() { playTone(880, "sawtooth", 0.22, 0.12, 220); }
-function sfxPortal() { playTone(280, "sine", 0.3, 0.15, 1120); }
-function sfxSwap() { playTone(520, "sine", 0.12, 0.15, 780); }
-function sfxError() {
-    playTone(160, "sawtooth", 0.28, 0.18, 110);
-    const card = document.getElementById("mainStageCard");
-    if (card) {
-        card.classList.remove("shake-Error");
-        void card.offsetWidth;
-        card.classList.add("shake-Error");
-    }
-}
+function sfxLaser() { playTone(820, "sawtooth", 0.18, 0.1, 260); }
+function sfxPortal() { playTone(300, "sine", 0.22, 0.12, 960); }
+function sfxSwap() { playTone(500, "sine", 0.1, 0.12, 740); }
+function sfxError() { playTone(165, "sawtooth", 0.24, 0.15, 115); }
 function sfxWin() {
     const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
     notes.forEach(function(n, idx) {
-        setTimeout(function() {
-            playTone(n, "triangle", 0.28, 0.2);
-        }, idx * 110);
+        setTimeout(function() { playTone(n, "triangle", 0.25, 0.18); }, idx * 105);
     });
 }
 
-// 頁面首次點擊自動解鎖瀏覽器音訊限制
 document.addEventListener("pointerdown", function() { getAudioCtx(); }, { once: true });
 
 // ============================================================================
-// 全螢幕煙火與畫布星光粒子視覺特效系統
+// 過關專用全螢幕慶祝煙火 (僅在過關 awardStars 時呼叫)
 // ============================================================================
-let sparkList = [];
-let sparkAnimId = null;
-
-function spawnSparks(clientX, clientY, colorHex) {
-    const cvs = document.getElementById("confettiCanvas");
-    cvs.style.display = "block";
-    cvs.width = window.innerWidth;
-    cvs.height = window.innerHeight;
-    for (let i = 0; i < 22; i++) {
-        const angle = (Math.PI * 2 * i) / 22 + (Math.random() - 0.5) * 0.3;
-        const speed = Math.random() * 5 + 2;
-        sparkList.push({
-            x: clientX,
-            y: clientY,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed - 1.5,
-            r: Math.random() * 4 + 3,
-            c: colorHex || ["#ffd54f","#69f0ae","#4dd0e1","#ff80ab"][i % 4],
-            alpha: 1.0
-        });
-    }
-    runSparkLoop();
-}
+let confettiParticles = [];
+let confettiAnimId = null;
 
 function fireConfetti() {
     const cvs = document.getElementById("confettiCanvas");
     cvs.style.display = "block";
     cvs.width = window.innerWidth;
     cvs.height = window.innerHeight;
+    confettiParticles = [];
     const colors = ["#ffd54f","#69f0ae","#64b5f6","#ff80ab","#b388ff","#4dd0e1"];
-    // 雙波段煙火爆炸 + 漫天彩帶
     for (let w = 0; w < 3; w++) {
         const cx = cvs.width * (0.25 + w * 0.25);
-        const cy = cvs.height * 0.35;
-        for (let i = 0; i < 38; i++) {
+        const cy = cvs.height * 0.32;
+        for (let i = 0; i < 32; i++) {
             const ang = Math.random() * Math.PI * 2;
-            const spd = Math.random() * 8 + 2;
-            sparkList.push({
-                x: cx,
-                y: cy,
+            const spd = Math.random() * 7 + 2;
+            confettiParticles.push({
+                x: cx, y: cy,
                 vx: Math.cos(ang) * spd,
                 vy: Math.sin(ang) * spd - 2,
-                r: Math.random() * 5 + 4,
+                r: Math.random() * 5 + 3,
                 c: colors[Math.floor(Math.random() * colors.length)],
-                alpha: 1.2
+                alpha: 1.1
             });
         }
     }
-    runSparkLoop();
-}
-
-function runSparkLoop() {
-    if (sparkAnimId) return;
-    const cvs = document.getElementById("confettiCanvas");
+    if (confettiAnimId) cancelAnimationFrame(confettiAnimId);
     const ctx = cvs.getContext("2d");
     function step() {
         ctx.clearRect(0, 0, cvs.width, cvs.height);
-        for (let i = sparkList.length - 1; i >= 0; i--) {
-            const p = sparkList[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.18; // 重力
-            p.alpha -= 0.018;
-            if (p.alpha <= 0) {
-                sparkList.splice(i, 1);
-                continue;
-            }
+        for (let i = confettiParticles.length - 1; i >= 0; i--) {
+            const p = confettiParticles[i];
+            p.x += p.vx; p.y += p.vy; p.vy += 0.18; p.alpha -= 0.02;
+            if (p.alpha <= 0) { confettiParticles.splice(i, 1); continue; }
             ctx.save();
             ctx.globalAlpha = Math.min(1, p.alpha);
-            ctx.shadowBlur = 10;
-            ctx.shadowColor = p.c;
             ctx.fillStyle = p.c;
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
         }
-        if (sparkList.length > 0) {
-            sparkAnimId = requestAnimationFrame(step);
+        if (confettiParticles.length > 0) {
+            confettiAnimId = requestAnimationFrame(step);
         } else {
-            sparkAnimId = null;
+            confettiAnimId = null;
             cvs.style.display = "none";
         }
     }
-    sparkAnimId = requestAnimationFrame(step);
+    confettiAnimId = requestAnimationFrame(step);
 }
 
 // ============================================================================
@@ -525,10 +448,7 @@ function formatHMS(totalSec) {
     const hrs = Math.floor(s / 3600);
     const mins = Math.floor((s % 3600) / 60);
     const secs = s % 60;
-    const hh = String(hrs).padStart(2, "0");
-    const mm = String(mins).padStart(2, "0");
-    const ss = String(secs).padStart(2, "0");
-    return hh + "時 " + mm + "分 " + ss + "秒";
+    return String(hrs).padStart(2, "0") + "時 " + String(mins).padStart(2, "0") + "分 " + String(secs).padStart(2, "0") + "秒";
 }
 
 function updateTimerBadgeUI() {
@@ -540,13 +460,9 @@ function updateTimerBadgeUI() {
         return;
     }
     badge.innerText = "⏳ " + formatHMS(timerState.remainingSec);
-    if (timerState.remainingSec <= 60) {
-        badge.className = "timer-badge danger";
-    } else if (timerState.remainingSec <= 300) {
-        badge.className = "timer-badge warn";
-    } else {
-        badge.className = "timer-badge";
-    }
+    if (timerState.remainingSec <= 60) badge.className = "timer-badge danger";
+    else if (timerState.remainingSec <= 300) badge.className = "timer-badge warn";
+    else badge.className = "timer-badge";
 }
 
 function startTimerLoop() {
@@ -557,12 +473,10 @@ function startTimerLoop() {
             timerState.remainingSec--;
             updateTimerBadgeUI();
             if (timerState.remainingSec > 0 && timerState.remainingSec <= 10) {
-                playTone(880, "sine", 0.06, 0.08);
+                playTone(880, "sine", 0.05, 0.06);
             }
             if (timerState.remainingSec % 5 === 0) saveTimerState();
-            if (timerState.remainingSec <= 0) {
-                triggerTimeUpLock(true);
-            }
+            if (timerState.remainingSec <= 0) triggerTimeUpLock(true);
         }
     }, 1000);
 }
@@ -575,11 +489,7 @@ function triggerTimeUpLock(autoDownload) {
     saveProgress();
     updateTimerBadgeUI();
     sfxError();
-
-    if (autoDownload) {
-        try { downloadJsonSave(); } catch (e) {}
-    }
-
+    if (autoDownload) { try { downloadJsonSave(); } catch (e) {} }
     document.getElementById("lockOverlay").style.display = "flex";
     try { window.close(); } catch (e) {}
 }
@@ -659,7 +569,7 @@ function applyTimerSetting(enableFlag) {
         alert("請設定至少 1 秒以上的倒數時間！");
         return;
     }
-    sfxWin();
+    sfxClick();
     timerState.remainingSec = total;
     timerState.active = enableFlag;
     saveTimerState();
@@ -669,14 +579,9 @@ function applyTimerSetting(enableFlag) {
 }
 
 // ============================================================================
-// 跨瀏覽器霓虹繪圖與存檔核心
+// 乾淨幾何繪圖函式與存檔核心
 // ============================================================================
-function drawRoundBox(ctx, x, y, w, h, r, glowCol) {
-    ctx.save();
-    if (glowCol) {
-        ctx.shadowBlur = 12;
-        ctx.shadowColor = glowCol;
-    }
+function drawRoundBox(ctx, x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + w - r, y);
@@ -690,7 +595,6 @@ function drawRoundBox(ctx, x, y, w, h, r, glowCol) {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    ctx.restore();
 }
 
 function loadSaveData() {
@@ -719,14 +623,15 @@ function awardStars(g, l, s) {
         appState.stars[k] = Math.max(appState.stars[k] || 0, s);
         saveProgress();
     }
+    // 只有過關時才觸發勝利交響樂與全螢幕慶祝煙火
     sfxWin();
     fireConfetti();
     const nextBtn = (l < 19)
         ? `<button class="cmd-btn" style="background:#69f0ae; padding:9px 18px; margin:6px;" onclick="closeModal(); loadLevel(${l+1});">⏩ 下一關 (第 ${l+2} 關)</button>`
         : `<button class="cmd-btn" style="background:#ff80ab; padding:9px 18px; margin:6px;" onclick="closeModal(); loadLevel(20);">🛠️ 自製創客關卡</button>`;
     showModal(`
-        <h2 style="color:#ffd54f; margin:0; text-shadow:0 0 12px #ffd54f;">🎉 闖關大成功！</h2>
-        <div style="font-size:2.6rem; margin:10px 0; text-shadow:0 0 18px #ffd54f;">${"⭐".repeat(s)}</div>
+        <h2 style="color:#ffd54f; margin:0;">🎉 闖關大成功！</h2>
+        <div style="font-size:2.5rem; margin:10px 0;">${"⭐".repeat(s)}</div>
         <p style="color:#eceff4;">恭喜完成 <b>第 ${l+1} 關</b>！進度已自動儲存。</p>
         <div>
             <button class="cmd-btn" style="background:#64b5f6; padding:9px 14px; margin:6px;" onclick="closeModal();">🔄 留在本關</button>
@@ -964,8 +869,13 @@ function updatePythonBox(code, tip) {
     document.getElementById("conceptBox").innerHTML = "💡 <b>運算思維小百科：</b><br>" + tip;
 }
 
-// --- 遊戲 1：星際編碼號 ---
-let g1State = { cmds: [], grid: [], rx:1, ry:5, rdir:0, laserOn:true, gotC:0, totalC:0, timer:null, brush:1 };
+// ============================================================================
+// 遊戲 1：🚀 星際編碼號 (含步進軌跡線 + 單格局部微回饋)
+// ============================================================================
+let g1State = {
+    cmds: [], grid: [], rx:1, ry:5, rdir:0, laserOn:true, gotC:0, totalC:0,
+    timer:null, brush:1, trace:[], localFx:null
+};
 function g1StopTimer() { if (g1State.timer) { clearTimeout(g1State.timer); g1State.timer = null; } }
 
 function initGame1(lIdx) {
@@ -1024,7 +934,6 @@ function g1SetBrush(b, el) {
 function g1CanvasClick(e) {
     if (appState.currentLevel !== 20 || g1State.timer) return;
     sfxClick();
-    spawnSparks(e.clientX, e.clientY, "#4dd0e1");
     const r = e.target.getBoundingClientRect();
     const gx = Math.floor((e.clientX - r.left) * (420 / r.width) / 60);
     const gy = Math.floor((e.clientY - r.top) * (420 / r.height) / 60);
@@ -1038,7 +947,10 @@ function g1CanvasClick(e) {
         } else row[gx] = String(g1State.brush);
         lvl.grid[gy] = row.join("");
         appState.customLevels.g1 = JSON.parse(JSON.stringify(lvl));
-        saveProgress(); g1ResetBoard();
+        saveProgress();
+        g1ResetBoard();
+        g1State.localFx = { x: gx, y: gy, color: "#ffd54f", text: "✏️已修改" };
+        g1Draw();
     }
 }
 
@@ -1048,9 +960,13 @@ function g1ResetBoard() {
     g1State.grid = lvl.grid.map(r => r.split("").map(Number));
     g1State.rx = lvl.start[0]; g1State.ry = lvl.start[1]; g1State.rdir = lvl.start[2];
     g1State.laserOn = true; g1State.gotC = 0;
+    g1State.trace = [[g1State.rx, g1State.ry]];
+    g1State.localFx = null;
     let cnt = 0;
     for (let y=0; y<7; y++) for (let x=0; x<7; x++) if (g1State.grid[y][x] === 2) cnt++;
     g1State.totalC = cnt;
+    const stBar = document.getElementById("g1Status");
+    if (stBar) stBar.className = "status-bar";
     g1Draw();
 }
 
@@ -1062,34 +978,67 @@ function g1Draw() {
     for (let y = 0; y < 7; y++) {
         for (let x = 0; x < 7; x++) {
             const x1 = x * cs, y1 = y * cs, cell = g1State.grid[y][x];
-            ctx.fillStyle = (cell === 4 && g1State.laserOn) ? "#4a1228" : ((x+y)%2===0 ? "#141827" : "#0e111d");
+            ctx.fillStyle = (cell === 4 && g1State.laserOn) ? "#3b1222" : ((x+y)%2===0 ? "#141827" : "#0e111d");
             ctx.fillRect(x1, y1, cs, cs);
             ctx.strokeStyle = "#232942"; ctx.strokeRect(x1, y1, cs, cs);
             ctx.font = "25px 'Segoe UI Emoji', sans-serif";
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
             if (icons[cell]) {
-                ctx.save();
-                if (cell === 2) { ctx.shadowBlur = 12; ctx.shadowColor = "#4dd0e1"; }
-                if (cell === 3) { ctx.shadowBlur = 15; ctx.shadowColor = "#69f0ae"; }
                 ctx.fillText(icons[cell], x1+30, y1+30);
-                ctx.restore();
             } else if (cell === 4 && g1State.laserOn) {
-                ctx.save();
-                ctx.shadowBlur = 12; ctx.shadowColor = "#ff4081";
                 ctx.strokeStyle = "#ff4081"; ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.moveTo(x1, y1+30); ctx.lineTo(x1+cs, y1+30); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(x1+4, y1+30); ctx.lineTo(x1+cs-4, y1+30); ctx.stroke();
+                ctx.lineWidth = 1;
                 ctx.fillText("⚡", x1+30, y1+30);
-                ctx.restore();
             }
         }
     }
+
+    // 繪製局部步進軌跡虛線 (直觀看到機器人走過的路徑)
+    if (g1State.trace.length > 1) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(100, 181, 246, 0.65)";
+        ctx.lineWidth = 4;
+        ctx.setLineDash([6, 4]);
+        for (let i = 0; i < g1State.trace.length - 1; i++) {
+            const [x1, y1] = g1State.trace[i];
+            const [x2, y2] = g1State.trace[i+1];
+            if (Math.abs(x1 - x2) + Math.abs(y1 - y2) === 1) {
+                ctx.beginPath();
+                ctx.moveTo(x1 * cs + 30, y1 * cs + 30);
+                ctx.lineTo(x2 * cs + 30, y2 * cs + 30);
+                ctx.stroke();
+            }
+        }
+        ctx.restore();
+    }
+
+    // 繪製單格局部動作回饋 (僅在觸發動作的那一格顯示小光圈與標籤)
+    if (g1State.localFx) {
+        const fx = g1State.localFx;
+        const cx = fx.x * cs + 30, cy = fx.y * cs + 30;
+        ctx.save();
+        ctx.strokeStyle = fx.color;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(fx.x * cs + 3, fx.y * cs + 3, cs - 6, cs - 6);
+        if (fx.text) {
+            ctx.fillStyle = "rgba(9, 11, 16, 0.85)";
+            ctx.fillRect(cx - 26, fyTop(fx.y, cs), 52, 18);
+            ctx.fillStyle = fx.color;
+            ctx.font = "bold 11px 'Microsoft JhengHei'";
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText(fx.text, cx, fyTop(fx.y, cs) + 9);
+        }
+        ctx.restore();
+    }
+
+    // 繪製機器人與清楚的面向箭頭
     const rx = g1State.rx * cs + 30, ry = g1State.ry * cs + 30;
-    ctx.save();
-    ctx.shadowBlur = 16; ctx.shadowColor = "#29b6f6";
     ctx.beginPath(); ctx.arc(rx, ry, 20, 0, Math.PI*2);
     ctx.fillStyle = "#29b6f6"; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = "#fff"; ctx.stroke();
-    ctx.restore();
-    ctx.font = "21px 'Segoe UI Emoji', sans-serif"; ctx.fillText("🤖", rx, ry);
+    ctx.font = "21px 'Segoe UI Emoji', sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("🤖", rx, ry);
+
     const dirs = [[0,-1],[1,0],[0,1],[-1,0]], arrs = ["▲","▶","▼","◀"];
     const dx = dirs[g1State.rdir][0], dy = dirs[g1State.rdir][1];
     ctx.beginPath(); ctx.arc(rx+dx*21, ry+dy*21, 8, 0, Math.PI*2);
@@ -1097,6 +1046,8 @@ function g1Draw() {
     ctx.font = "bold 10px Consolas"; ctx.fillStyle = "#fff";
     ctx.fillText(arrs[g1State.rdir], rx+dx*21, ry+dy*21);
 }
+
+function fyTop(gy, cs) { return gy > 0 ? (gy * cs - 10) : (gy * cs + cs - 18); }
 
 function g1Add(c) { if (!g1State.timer && g1State.cmds.length < 24) { sfxClick(); g1State.cmds.push(c); g1RenderCmds(-1); } }
 function g1Pop() { if (!g1State.timer && g1State.cmds.length > 0) { sfxClick(); g1State.cmds.pop(); g1RenderCmds(-1); } }
@@ -1146,31 +1097,49 @@ function g1Run() {
     if (g1State.timer || !g1State.cmds.length) return;
     g1ResetBoard();
     const q = g1Compile(g1State.cmds); if (!q.length) return;
+    const stBar = document.getElementById("g1Status");
     let idx = 0;
     function step() {
         if (idx >= q.length) {
             g1State.timer = null; g1RenderCmds(-1);
             if (g1State.grid[g1State.ry][g1State.rx] === 3 && g1State.gotC === g1State.totalC) {
+                g1State.localFx = { x: g1State.rx, y: g1State.ry, color: "#69f0ae", text: "🛸抵達!" };
+                g1Draw();
                 const eff = g1State.cmds.filter(c => c !== "END_LOOP").length;
                 const opt = G1_LEVELS[appState.currentLevel].opt;
                 awardStars(0, appState.currentLevel, eff <= opt ? 3 : (eff <= opt+2 ? 2 : 1));
             } else {
                 sfxError();
-                document.getElementById("g1Status").innerText = "🤔 還沒收集完水晶或還沒抵達終點喔！";
+                stBar.className = "status-bar err";
+                stBar.innerText = "🤔 還沒收集完水晶 (" + g1State.gotC + "/" + g1State.totalC + ") 或還沒抵達太空船喔！";
             }
             return;
         }
         const item = q[idx]; g1RenderCmds(item.line);
         const dirs = [[0,-1],[1,0],[0,1],[-1,0]];
-        const cvsRect = document.getElementById("g1Canvas").getBoundingClientRect();
+        const dirNames = ["北(上)", "東(右)", "南(下)", "西(左)"];
 
-        if (item.act === "LEFT") { sfxTurn(); g1State.rdir = (g1State.rdir + 3) % 4; }
-        else if (item.act === "RIGHT") { sfxTurn(); g1State.rdir = (g1State.rdir + 1) % 4; }
+        if (item.act === "LEFT") {
+            sfxTurn();
+            g1State.rdir = (g1State.rdir + 3) % 4;
+            g1State.localFx = { x: g1State.rx, y: g1State.ry, color: "#4dd0e1", text: "↩️左轉" };
+            stBar.innerText = "↩️ 向左轉！目前面向：" + dirNames[g1State.rdir];
+        }
+        else if (item.act === "RIGHT") {
+            sfxTurn();
+            g1State.rdir = (g1State.rdir + 1) % 4;
+            g1State.localFx = { x: g1State.rx, y: g1State.ry, color: "#4dd0e1", text: "↪️右轉" };
+            stBar.innerText = "↪️ 向右轉！目前面向：" + dirNames[g1State.rdir];
+        }
         else if (item.act === "SWITCH") {
             if (g1State.grid[g1State.ry][g1State.rx] === 5) {
                 sfxLaser();
                 g1State.laserOn = !g1State.laserOn;
-                spawnSparks(cvsRect.left + g1State.rx * 60 + 30, cvsRect.top + g1State.ry * 60 + 30, "#ffd54f");
+                g1State.localFx = { x: g1State.rx, y: g1State.ry, color: "#ffd54f", text: g1State.laserOn ? "🔴開啟" : "🟢解除" };
+                stBar.innerText = "👆 觸發開關！雷射門已" + (g1State.laserOn ? "開啟" : "解除");
+            } else {
+                sfxError();
+                g1State.localFx = { x: g1State.rx, y: g1State.ry, color: "#ffb74d", text: "❓無開關" };
             }
         }
         else if (item.act === "MOVE") {
@@ -1178,44 +1147,60 @@ function g1Run() {
             if (nx<0 || nx>=7 || ny<0 || ny>=7 || g1State.grid[ny][nx]===1 || (g1State.grid[ny][nx]===4 && g1State.laserOn)) {
                 g1State.timer = null;
                 sfxError();
-                document.getElementById("g1Status").innerText = "💥 撞上隕石或雷射了！請修改積木。";
+                const errX = Math.max(0, Math.min(6, nx)), errY = Math.max(0, Math.min(6, ny));
+                g1State.localFx = { x: errX, y: errY, color: "#ff4081", text: "💥阻擋!" };
+                g1Draw();
+                stBar.className = "status-bar err";
+                stBar.innerText = "💥 在座標 (" + errX + "," + errY + ") 撞上障礙物或雷射！請調整積木。";
                 return;
             }
             sfxStep();
             g1State.rx = nx; g1State.ry = ny;
+            g1State.trace.push([nx, ny]);
+            g1State.localFx = { x: nx, y: ny, color: "#64b5f6", text: "" };
+            stBar.innerText = "⬆️ 前進一步至 (" + nx + "," + ny + ") | 水晶：" + g1State.gotC + "/" + g1State.totalC;
+
             if (g1State.grid[ny][nx] === 2) {
                 g1State.grid[ny][nx] = 0; g1State.gotC++;
                 sfxCrystal();
-                spawnSparks(cvsRect.left + nx * 60 + 30, cvsRect.top + ny * 60 + 30, "#4dd0e1");
+                g1State.localFx = { x: nx, y: ny, color: "#69f0ae", text: "+1💎" };
+                stBar.innerText = "💎 收集到能量水晶！ (" + g1State.gotC + "/" + g1State.totalC + ")";
             }
             else if (g1State.grid[ny][nx] === 6) {
                 sfxPortal();
                 outer: for (let py=0; py<7; py++) for (let px=0; px<7; px++) {
                     if (g1State.grid[py][px] === 6 && (px !== nx || py !== ny)) {
                         g1State.rx = px; g1State.ry = py;
-                        spawnSparks(cvsRect.left + px * 60 + 30, cvsRect.top + py * 60 + 30, "#b388ff");
+                        g1State.trace.push([px, py]);
+                        g1State.localFx = { x: px, y: py, color: "#b388ff", text: "🌀躍遷" };
+                        stBar.innerText = "🌀 透過蟲洞瞬間移動至 (" + px + "," + py + ")！";
                         break outer;
                     }
                 }
             }
         }
-        g1Draw(); idx++; g1State.timer = setTimeout(step, 330);
+        g1Draw(); idx++; g1State.timer = setTimeout(step, 340);
     }
     step();
 }
 
-// --- 遊戲 2：光子邏輯閘 ---
-let g2State = { inVals: [0,0,0,0], clicks: 0, finalOut: 0 };
+// ============================================================================
+// 遊戲 2：⚡ 光子邏輯閘 (含開關局部聚焦框 + 導線電流節點指示)
+// ============================================================================
+let g2State = { inVals: [0,0,0,0], clicks: 0, finalOut: 0, lastChangedIdx: -1 };
 
 function initGame2(lIdx) {
     if (lIdx === 20 && appState.customLevels.g2) G2_LEVELS[20] = JSON.parse(JSON.stringify(appState.customLevels.g2));
     const lvl = G2_LEVELS[lIdx];
     document.getElementById("lvlTitle").innerText = "⚡ " + lvl.name;
     document.getElementById("lvlDesc").innerText = lvl.desc;
-    g2State.inVals = [0,0,0,0]; g2State.clicks = 0;
+    g2State.inVals = [0,0,0,0]; g2State.clicks = 0; g2State.lastChangedIdx = -1;
     document.getElementById("stageContent").innerHTML = `<div style="text-align:center;">
-        <canvas id="g2Canvas" width="700" height="380"></canvas>
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-top:8px; gap:8px;">
+        <canvas id="g2Canvas" width="700" height="360"></canvas>
+        <div class="status-bar" id="g2Status" style="text-align:left; margin-bottom:8px;">
+            ⚡ 請點擊左側開關切換 0 與 1，觀察邏輯閘輸出變化。
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <div style="font-size:0.84rem; color:#4dd0e1;">💡 【AND】全1才1 ｜ 【OR】有1就1 ｜ 【XOR】不同才1 ｜ 【NAND】不全1就1 ｜ 【NOR】全0才1</div>
             <button class="cmd-btn" style="background:#69f0ae; padding:9px 20px; font-size:0.95rem;" onclick="g2CheckWin()">✅ 驗證並啟動核心</button>
         </div>
@@ -1242,50 +1227,60 @@ function g2EvalAndDraw() {
     g2State.finalOut = finalOut;
 
     const cvs = document.getElementById("g2Canvas"); if (!cvs) return;
-    const ctx = cvs.getContext("2d"); ctx.clearRect(0, 0, 700, 380);
-    const ys = (lvl.ins === 4) ? [70, 150, 235, 315] : [125, 255];
+    const ctx = cvs.getContext("2d"); ctx.clearRect(0, 0, 700, 360);
+    const ys = (lvl.ins === 4) ? [65, 145, 225, 305] : [120, 245];
 
     function wire(x1, y1, x2, y2, v) {
-        ctx.save();
-        if (v) { ctx.shadowBlur = 10; ctx.shadowColor = "#69f0ae"; }
-        ctx.strokeStyle = v ? "#69f0ae" : "#37474f"; ctx.lineWidth = v ? 5 : 3;
-        const mx = (x1+x2)/2; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(mx,y1); ctx.lineTo(mx,y2); ctx.lineTo(x2,y2); ctx.stroke();
-        ctx.restore();
+        ctx.strokeStyle = v ? "#69f0ae" : "#37474f"; ctx.lineWidth = v ? 4.5 : 2.5;
+        const mx = (x1+x2)/2;
+        ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(mx,y1); ctx.lineTo(mx,y2); ctx.lineTo(x2,y2); ctx.stroke();
+        // 局部電流信號節點
+        if (v) {
+            ctx.fillStyle = "#ffd54f";
+            ctx.beginPath(); ctx.arc(mx, (y1+y2)/2, 4.5, 0, Math.PI*2); ctx.fill();
+        }
     }
     function gate(x, y, w, h, t, v) {
-        ctx.fillStyle = v ? "#1e88e5" : "#263238"; ctx.strokeStyle = v ? "#69f0ae" : "#90a4ae"; ctx.lineWidth = 2.5;
-        drawRoundBox(ctx, x, y, w, h, 10, v ? "#29b6f6" : null);
+        ctx.fillStyle = v ? "#1565c0" : "#263238"; ctx.strokeStyle = v ? "#69f0ae" : "#78909c"; ctx.lineWidth = 2.5;
+        drawRoundBox(ctx, x, y, w, h, 10);
         ctx.fillStyle = "#fff"; ctx.font = "bold 14px 'Microsoft JhengHei'"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(t + " 閘", x+w/2, y+h/2-9);
-        ctx.fillStyle = v ? "#ffd54f" : "#b0bec5"; ctx.fillText("OUT=" + v, x+w/2, y+h/2+11);
+        ctx.fillStyle = v ? "#ffd54f" : "#b0bec5"; ctx.fillText("OUT = " + v, x+w/2, y+h/2+11);
     }
 
     if (lvl.ins === 2) {
-        wire(145, 125, 280, 175, A); wire(145, 255, 280, 205, B);
-        gate(280, 145, 125, 85, lvl.g1, out1); wire(405, 190, 545, 190, finalOut);
+        wire(145, 120, 280, 168, A); wire(145, 245, 280, 198, B);
+        gate(280, 140, 125, 85, lvl.g1, out1); wire(405, 182, 545, 182, finalOut);
     } else {
-        wire(145, 70, 245, 100, A); wire(145, 150, 245, 125, B); gate(245, 70, 115, 75, lvl.g1, out1);
-        wire(145, 235, 245, 265, C); wire(145, 315, 245, 290, D); gate(245, 235, 115, 75, lvl.g2, out2);
-        wire(360, 108, 435, 175, out1); wire(360, 273, 435, 205, out2); gate(435, 152, 115, 75, lvl.g3, finalOut);
-        wire(550, 190, 590, 190, finalOut);
+        wire(145, 65, 245, 95, A); wire(145, 145, 245, 120, B); gate(245, 68, 115, 75, lvl.g1, out1);
+        wire(145, 225, 245, 255, C); wire(145, 305, 245, 280, D); gate(245, 228, 115, 75, lvl.g2, out2);
+        wire(360, 105, 435, 170, out1); wire(360, 265, 435, 200, out2); gate(435, 148, 115, 75, lvl.g3, finalOut);
+        wire(550, 185, 590, 185, finalOut);
     }
 
     for (let i = 0; i < lvl.ins; i++) {
         const y = ys[i], v = g2State.inVals[i];
-        ctx.fillStyle = v ? "#69f0ae" : "#263238"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
-        drawRoundBox(ctx, 25, y-22, 120, 44, 9, v ? "#69f0ae" : null);
+        const isLast = (g2State.lastChangedIdx === i);
+        ctx.fillStyle = v ? "#69f0ae" : "#263238";
+        ctx.strokeStyle = isLast ? "#ffd54f" : "#fff";
+        ctx.lineWidth = isLast ? 3.5 : 2;
+        drawRoundBox(ctx, 25, y-22, 120, 44, 9);
         ctx.fillStyle = v ? "#111" : "#fff"; ctx.font = "bold 14px 'Microsoft JhengHei'";
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText("開關 " + ["A","B","C","D"][i] + " = " + v, 85, y);
+        // 剛點擊的開關局部指示小箭頭
+        if (isLast) {
+            ctx.fillStyle = "#ffd54f"; ctx.font = "bold 12px sans-serif";
+            ctx.fillText("▶", 14, y);
+        }
     }
 
-    ctx.save();
-    if (finalOut) { ctx.shadowBlur = 22; ctx.shadowColor = "#ffd54f"; }
-    ctx.beginPath(); ctx.arc(635, 190, 42, 0, Math.PI*2);
+    const cy = (lvl.ins === 2) ? 182 : 185;
+    ctx.beginPath(); ctx.arc(635, cy, 42, 0, Math.PI*2);
     ctx.fillStyle = finalOut ? "#ffd54f" : "#263238"; ctx.fill();
     ctx.lineWidth = 4; ctx.strokeStyle = finalOut ? "#69f0ae" : "#546e7a"; ctx.stroke();
-    ctx.restore();
     ctx.fillStyle = finalOut ? "#111" : "#eceff4";
-    ctx.fillText("🎯核心", 635, 180); ctx.fillText("OUT=" + finalOut, 635, 202);
+    ctx.fillText("🎯核心", 635, cy-10); ctx.fillText("OUT=" + finalOut, 635, cy+12);
 
     const py = [
         "# ⚡ 布林邏輯電路模擬",
@@ -1303,21 +1298,27 @@ function g2EvalAndDraw() {
 
 function g2CanvasClick(e) {
     const lvl = G2_LEVELS[appState.currentLevel], r = e.target.getBoundingClientRect();
-    const x = (e.clientX - r.left) * (700 / r.width), y = (e.clientY - r.top) * (380 / r.height);
-    const ys = (lvl.ins === 4) ? [70, 150, 235, 315] : [125, 255];
+    const x = (e.clientX - r.left) * (700 / r.width), y = (e.clientY - r.top) * (360 / r.height);
+    const ys = (lvl.ins === 4) ? [65, 145, 225, 305] : [120, 245];
+    const stBar = document.getElementById("g2Status");
+
     for (let i = 0; i < lvl.ins; i++) {
         if (x >= 25 && x <= 145 && y >= ys[i]-22 && y <= ys[i]+22) {
-            g2State.inVals[i] = 1 - g2State.inVals[i]; g2State.clicks++;
+            g2State.inVals[i] = 1 - g2State.inVals[i];
+            g2State.clicks++;
+            g2State.lastChangedIdx = i;
             sfxClick();
-            spawnSparks(e.clientX, e.clientY, g2State.inVals[i] ? "#69f0ae" : "#64b5f6");
-            g2EvalAndDraw(); return;
+            g2EvalAndDraw();
+            stBar.className = "status-bar";
+            stBar.innerText = "👆 動作回饋：切換「開關 " + ["A","B","C","D"][i] + "」為 " + g2State.inVals[i] + " ➔ 核心目前輸出 OUT = " + g2State.finalOut;
+            return;
         }
     }
     if (appState.currentLevel === 20) {
         const ts = ["AND","OR","XOR","NAND","NOR"];
-        if (x>=245 && x<=360 && y>=70 && y<=145) lvl.g1 = ts[(ts.indexOf(lvl.g1)+1)%5];
-        else if (x>=245 && x<=360 && y>=235 && y<=310) lvl.g2 = ts[(ts.indexOf(lvl.g2)+1)%5];
-        else if (x>=435 && x<=550 && y>=152 && y<=227) lvl.g3 = ts[(ts.indexOf(lvl.g3)+1)%5];
+        if (x>=245 && x<=360 && y>=68 && y<=143) lvl.g1 = ts[(ts.indexOf(lvl.g1)+1)%5];
+        else if (x>=245 && x<=360 && y>=228 && y<=303) lvl.g2 = ts[(ts.indexOf(lvl.g2)+1)%5];
+        else if (x>=435 && x<=550 && y>=148 && y<=223) lvl.g3 = ts[(ts.indexOf(lvl.g3)+1)%5];
         sfxLaser();
         appState.customLevels.g2 = JSON.parse(JSON.stringify(lvl)); saveProgress(); g2EvalAndDraw();
     }
@@ -1325,26 +1326,32 @@ function g2CanvasClick(e) {
 
 function g2CheckWin() {
     const lvl = G2_LEVELS[appState.currentLevel];
-    if (g2State.finalOut !== 1) { sfxError(); return alert("⚠️ 右側的能量核心目前還是 0（未啟動）喔！"); }
+    const stBar = document.getElementById("g2Status");
+    if (g2State.finalOut !== 1) {
+        sfxError(); stBar.className = "status-bar err";
+        stBar.innerText = "⚠️ 驗證未通過：右側的能量核心目前還是 0（未點亮）喔！"; return;
+    }
     const cnt = g2State.inVals.slice(0, lvl.ins).reduce((a,b)=>a+b, 0);
-    if (lvl.rule === "EXACT_1" && cnt !== 1) { sfxError(); return alert("限制：必須剛好開啟 1 個開關（目前 " + cnt + " 個）！"); }
-    if (lvl.rule === "EXACT_2" && cnt !== 2) { sfxError(); return alert("限制：必須剛好開啟 2 個開關（目前 " + cnt + " 個）！"); }
-    if (lvl.rule === "EXACT_3" && cnt !== 3) { sfxError(); return alert("限制：必須剛好開啟 3 個開關（目前 " + cnt + " 個）！"); }
-    if (lvl.rule === "AT_LEAST_1" && cnt < 1) { sfxError(); return alert("限制：至少開啟 1 個開關！"); }
-    if (lvl.rule === "MAX_3" && cnt > 3) { sfxError(); return alert("限制：最多開啟 3 個開關！"); }
-    if (appState.currentLevel === 14 && g2State.inVals[0] !== 1) { sfxError(); return alert("限制：開關 A 必須開啟！"); }
+    if (lvl.rule === "EXACT_1" && cnt !== 1) { sfxError(); stBar.className="status-bar err"; stBar.innerText="⚠️ 限制未達成：必須剛好開啟 1 個開關（目前開啟 " + cnt + " 個）！"; return; }
+    if (lvl.rule === "EXACT_2" && cnt !== 2) { sfxError(); stBar.className="status-bar err"; stBar.innerText="⚠️ 限制未達成：必須剛好開啟 2 個開關（目前開啟 " + cnt + " 個）！"; return; }
+    if (lvl.rule === "EXACT_3" && cnt !== 3) { sfxError(); stBar.className="status-bar err"; stBar.innerText="⚠️ 限制未達成：必須剛好開啟 3 個開關（目前開啟 " + cnt + " 個）！"; return; }
+    if (lvl.rule === "AT_LEAST_1" && cnt < 1) { sfxError(); stBar.className="status-bar err"; stBar.innerText="⚠️ 限制未達成：至少要開啟 1 個開關！"; return; }
+    if (lvl.rule === "MAX_3" && cnt > 3) { sfxError(); stBar.className="status-bar err"; stBar.innerText="⚠️ 限制未達成：最多只能開啟 3 個開關！"; return; }
+    if (appState.currentLevel === 14 && g2State.inVals[0] !== 1) { sfxError(); stBar.className="status-bar err"; stBar.innerText="⚠️ 限制未達成：開關 A 必須是開啟狀態！"; return; }
     awardStars(1, appState.currentLevel, g2State.clicks <= 4 ? 3 : (g2State.clicks <= 7 ? 2 : 1));
 }
 
-// --- 遊戲 3：能量排序室 ---
-let g3State = { arr: [], sel: null, swaps: 0 };
+// ============================================================================
+// 遊戲 3：⚖️ 能量排序室 (含兩瓶交換局部雙向弧線箭頭 `⇄` 指示)
+// ============================================================================
+let g3State = { arr: [], sel: null, swaps: 0, lastSwapPair: null };
 
 function initGame3(lIdx) {
     if (lIdx === 20 && appState.customLevels.g3) G3_LEVELS[20] = JSON.parse(JSON.stringify(appState.customLevels.g3));
     const lvl = G3_LEVELS[lIdx];
     document.getElementById("lvlTitle").innerText = "⚖️ " + lvl.name + " 【⭐⭐⭐ 黃金目標：" + lvl.opt + " 次交換內】";
     document.getElementById("lvlDesc").innerText = lvl.desc;
-    g3State.arr = [...lvl.arr]; g3State.sel = null; g3State.swaps = 0;
+    g3State.arr = [...lvl.arr]; g3State.sel = null; g3State.swaps = 0; g3State.lastSwapPair = null;
 
     const customHtml = (lIdx === 20) ? `<div class="brush-bar">
         <input id="g3CustomIn" value="${lvl.arr.join(' ')}" style="background:#090b10; color:#fff; border:1px solid #4dd0e1; border-radius:6px; padding:4px 8px; width:160px;">
@@ -1389,16 +1396,44 @@ function g3Draw(code) {
     const target = g3GetTarget(), maxV = Math.max(...g3State.arr, 1);
 
     ctx.fillStyle = "#69f0ae"; ctx.font = "bold 14px Consolas"; ctx.textAlign = "center";
-    ctx.fillText("🎯 目標排列：[ " + target.join(", ") + " ]", 350, 24);
+    ctx.fillText("🎯 目標排列：[ " + target.join(", ") + " ]", 350, 22);
+
+    // 繪製剛交換兩瓶之間的局部弧線指示箭頭
+    if (g3State.lastSwapPair) {
+        const [i1, i2] = g3State.lastSwapPair;
+        const cx1 = sx + i1 * w + w / 2;
+        const cx2 = sx + i2 * w + w / 2;
+        const midX = (cx1 + cx2) / 2;
+        ctx.save();
+        ctx.strokeStyle = "#ffd54f"; ctx.lineWidth = 2.5; ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(cx1, 68);
+        ctx.quadraticCurveTo(midX, 34, cx2, 68);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#ffd54f"; ctx.font = "bold 12px 'Microsoft JhengHei'";
+        ctx.fillText("⇄ 剛交換 [" + i1 + "] 與 [" + i2 + "]", midX, 44);
+        ctx.restore();
+    }
 
     g3State.arr.forEach((v, i) => {
-        const x1 = sx + i*w + 10, bw = w - 20, bh = Math.floor((v/maxV)*185) + 35, y2 = 290, y1 = y2 - bh;
+        const x1 = sx + i*w + 10, bw = w - 20, bh = Math.floor((v/maxV)*170) + 35, y2 = 292, y1 = y2 - bh;
         const isSel = (g3State.sel === i), isOk = (v === target[i]);
+        const isSwapped = g3State.lastSwapPair && (g3State.lastSwapPair[0] === i || g3State.lastSwapPair[1] === i);
+
         ctx.fillStyle = isSel ? "#ffd54f" : (isOk ? "#00e676" : "#29b6f6");
-        ctx.strokeStyle = isSel ? "#fff" : "#90caf9"; ctx.lineWidth = isSel ? 3 : 1.5;
-        drawRoundBox(ctx, x1, y1, bw, bh, 8, isSel ? "#ffd54f" : (isOk ? "#00e676" : null));
-        ctx.fillStyle = "#fff"; ctx.font = "bold 15px Consolas"; ctx.fillText(String(v), x1+bw/2, y1-12);
-        ctx.fillStyle = "#4dd0e1"; ctx.font = "bold 12px sans-serif"; ctx.fillText("[" + i + "]", x1+bw/2, y2+20);
+        ctx.strokeStyle = isSel ? "#fff" : (isSwapped ? "#ffd54f" : "#90caf9");
+        ctx.lineWidth = (isSel || isSwapped) ? 3 : 1.5;
+        drawRoundBox(ctx, x1, y1, bw, bh, 8);
+
+        ctx.fillStyle = isSel ? "#ffd54f" : "#fff";
+        ctx.font = "bold 15px Consolas"; ctx.fillText(String(v), x1+bw/2, y1-12);
+        ctx.fillStyle = isSwapped ? "#ffd54f" : "#4dd0e1";
+        ctx.font = "bold 12px sans-serif"; ctx.fillText("[" + i + "]", x1+bw/2, y2+20);
+        if (isOk) {
+            ctx.fillStyle = "#0b0e17"; ctx.font = "bold 14px Consolas";
+            ctx.fillText("✓", x1+bw/2, y2-14);
+        }
     });
     const py = [
         "# ⚖️ 陣列排序演算法",
@@ -1414,31 +1449,50 @@ function g3CanvasClick(e) {
     const r = e.target.getBoundingClientRect(), x = (e.clientX - r.left) * (700 / r.width);
     const n = g3State.arr.length, w = Math.floor(620 / n), sx = 40 + Math.floor((620 - w*n)/2);
     const idx = Math.floor((x - sx) / w); if (idx < 0 || idx >= n) return;
-    if (g3State.sel === null) { sfxClick(); g3State.sel = idx; g3Draw("# 選取 potions[" + idx + "]"); }
-    else if (g3State.sel === idx) { sfxClick(); g3State.sel = null; g3Draw("# 取消選取"); }
+    const stBar = document.getElementById("g3Status");
+
+    if (g3State.sel === null) {
+        sfxClick(); g3State.sel = idx;
+        stBar.className = "status-bar";
+        stBar.innerText = "👉 已選取索引 [" + idx + "] (數值 " + g3State.arr[idx] + ")，請點擊另一瓶進行交換。";
+        g3Draw("# 選取 potions[" + idx + "]");
+    }
+    else if (g3State.sel === idx) {
+        sfxClick(); g3State.sel = null;
+        stBar.innerText = "已取消選取（目前已交換：" + g3State.swaps + " 次）";
+        g3Draw("# 取消選取");
+    }
     else {
         const i = g3State.sel, j = idx, lvl = G3_LEVELS[appState.currentLevel];
-        if (lvl.adj && Math.abs(i - j) !== 1) { sfxError(); alert("⚠️ 本關限制只能交換相鄰的兩瓶喔！"); g3State.sel = null; g3Draw("# 違反相鄰限制"); return; }
+        if (lvl.adj && Math.abs(i - j) !== 1) {
+            sfxError();
+            stBar.className = "status-bar err";
+            stBar.innerText = "⚠️ 泡泡排序限制：只能交換「相鄰（隔壁）」的兩瓶能量液喔！";
+            g3State.sel = null; g3Draw("# 違反相鄰限制"); return;
+        }
         const tmp = g3State.arr[i]; g3State.arr[i] = g3State.arr[j]; g3State.arr[j] = tmp;
         g3State.swaps++; g3State.sel = null;
+        g3State.lastSwapPair = [Math.min(i, j), Math.max(i, j)];
         sfxSwap();
-        spawnSparks(e.clientX, e.clientY, "#ffd54f");
-        document.getElementById("g3Status").innerText = "已交換：" + g3State.swaps + " 次";
+        stBar.className = "status-bar";
+        stBar.innerText = "⇄ 成功交換 [" + i + "] 與 [" + j + "]！ (累計交換：" + g3State.swaps + " 次)";
         g3Draw("potions[" + i + "], potions[" + j + "] = potions[" + j + "], potions[" + i + "]");
         const t = g3GetTarget();
         if (g3State.arr.every((v, k) => v === t[k])) awardStars(2, appState.currentLevel, g3State.swaps <= lvl.opt ? 3 : (g3State.swaps <= lvl.opt+2 ? 2 : 1));
     }
 }
 
-// --- 遊戲 4：星際河內塔 ---
-let g4State = { pegs: [], sel: null, moves: 0, totalDisks: 0 };
+// ============================================================================
+// 遊戲 4：🗼 星際河內塔 (含柱間移動局部弧線軌跡箭頭)
+// ============================================================================
+let g4State = { pegs: [], sel: null, moves: 0, totalDisks: 0, lastMoveArc: null };
 
 function initGame4(lIdx) {
     if (lIdx === 20 && appState.customLevels.g4) G4_LEVELS[20] = JSON.parse(JSON.stringify(appState.customLevels.g4));
     const lvl = G4_LEVELS[lIdx];
     document.getElementById("lvlTitle").innerText = "🗼 " + lvl.name + " 【⭐⭐⭐ 黃金目標：" + lvl.opt + " 步內】";
     document.getElementById("lvlDesc").innerText = lvl.desc;
-    g4State.pegs = JSON.parse(JSON.stringify(lvl.pegs)); g4State.sel = null; g4State.moves = 0;
+    g4State.pegs = JSON.parse(JSON.stringify(lvl.pegs)); g4State.sel = null; g4State.moves = 0; g4State.lastMoveArc = null;
     let dCnt = 0;
     g4State.pegs.forEach(p => dCnt += p.length);
     g4State.totalDisks = dCnt;
@@ -1482,6 +1536,19 @@ function g4Draw(code) {
     const lvl = G4_LEVELS[appState.currentLevel], numP = g4State.pegs.length, sp = Math.floor(700 / numP);
     const cols = ["#ff80ab","#ffb74d","#ffd54f","#69f0ae","#64b5f6","#b388ff"], pN = ["A 柱","B 柱","C 柱","D 柱"];
 
+    // 繪製上一步移動的局部拋物線軌跡
+    if (g4State.lastMoveArc) {
+        const {src, dst, disk} = g4State.lastMoveArc;
+        const x1 = sp * src + sp / 2, x2 = sp * dst + sp / 2, midX = (x1 + x2) / 2;
+        ctx.save();
+        ctx.strokeStyle = "#4dd0e1"; ctx.lineWidth = 2.5; ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(x1, 78); ctx.quadraticCurveTo(midX, 26, x2, 78); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#4dd0e1"; ctx.font = "bold 12px 'Microsoft JhengHei'"; ctx.textAlign = "center";
+        ctx.fillText("環" + disk + ": " + pN[src] + " ➔ " + pN[dst], midX, 38);
+        ctx.restore();
+    }
+
     g4State.pegs.forEach((st, idx) => {
         const cx = sp * idx + sp / 2, isSel = (g4State.sel === idx), isT = (idx === lvl.target);
         ctx.fillStyle = isT ? "#69f0ae" : "#455a64"; ctx.fillRect(cx-65, 290, 130, 12);
@@ -1490,10 +1557,13 @@ function g4Draw(code) {
         ctx.fillText(isT ? "🎯 " + pN[idx] + "(終點)" : pN[idx], cx, 320);
 
         st.forEach((d, sPos) => {
-            const w = 20 + d * 14, y2 = 288 - sPos * 30 - (isSel && sPos === st.length-1 ? 18 : 0);
-            const cHex = cols[(d-1)%cols.length];
-            ctx.fillStyle = cHex; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
-            drawRoundBox(ctx, cx-w, y2-26, w*2, 26, 7, (isSel && sPos === st.length-1) ? cHex : null);
+            const isTop = (sPos === st.length - 1);
+            const w = 20 + d * 14, y2 = 288 - sPos * 30 - (isSel && isTop ? 18 : 0);
+            const isJustMoved = g4State.lastMoveArc && g4State.lastMoveArc.dst === idx && isTop;
+            ctx.fillStyle = cols[(d-1)%cols.length];
+            ctx.strokeStyle = (isSel && isTop) || isJustMoved ? "#ffd54f" : "#fff";
+            ctx.lineWidth = (isSel && isTop) || isJustMoved ? 3.5 : 2;
+            drawRoundBox(ctx, cx-w, y2-26, w*2, 26, 7);
             ctx.fillStyle = "#111"; ctx.font = "bold 12px sans-serif"; ctx.fillText("環 " + d, cx, y2-13);
         });
     });
@@ -1507,24 +1577,50 @@ function g4CanvasClick(e) {
     const r = e.target.getBoundingClientRect(), x = (e.clientX - r.left) * (700 / r.width);
     const numP = g4State.pegs.length, idx = Math.floor(x / (700 / numP));
     if (idx < 0 || idx >= numP) return;
-    if (g4State.sel === null) { if (g4State.pegs[idx].length) { sfxClick(); g4State.sel = idx; g4Draw("# 選取柱 " + idx); } }
-    else if (g4State.sel === idx) { sfxClick(); g4State.sel = null; g4Draw("# 取消選取"); }
+    const stBar = document.getElementById("g4Status");
+    const pL = ["A","B","C","D"];
+
+    if (g4State.sel === null) {
+        if (g4State.pegs[idx].length) {
+            sfxClick(); g4State.sel = idx;
+            const topD = g4State.pegs[idx][g4State.pegs[idx].length-1];
+            stBar.className = "status-bar";
+            stBar.innerText = "👆 已拿起 " + pL[idx] + " 柱頂端的「環 " + topD + "」，請點擊目標柱子放入。";
+            g4Draw("# 選取 stack_" + pL[idx] + " 頂端環 " + topD);
+        }
+    }
+    else if (g4State.sel === idx) {
+        sfxClick(); g4State.sel = null;
+        stBar.innerText = "已放下能量環（目前步數：" + g4State.moves + " 步）";
+        g4Draw("# 取消選取");
+    }
     else {
         const src = g4State.sel, dst = idx, lvl = G4_LEVELS[appState.currentLevel];
-        if (lvl.adj && Math.abs(src - dst) !== 1) { sfxError(); alert("⚠️ 本關限制只能移到隔壁相鄰的柱子喔！"); g4State.sel = null; g4Draw("# 違反相鄰限制"); return; }
+        if (lvl.adj && Math.abs(src - dst) !== 1) {
+            sfxError(); stBar.className = "status-bar err";
+            stBar.innerText = "⚠️ 相鄰移動限制：每次只能移到隔壁相鄰的柱子喔！";
+            g4State.sel = null; g4Draw("# 違反相鄰限制"); return;
+        }
         const disk = g4State.pegs[src][g4State.pegs[src].length-1], top = g4State.pegs[dst][g4State.pegs[dst].length-1];
-        if (top !== undefined && top < disk) { sfxError(); alert("⚠️ 大環不能壓在小環上面喔！"); g4State.sel = null; g4Draw("# 違反大小規則"); return; }
+        if (top !== undefined && top < disk) {
+            sfxError(); stBar.className = "status-bar err";
+            stBar.innerText = "⚠️ 違反堆疊規則：大環（環 " + disk + "）不能壓在小環（環 " + top + "）上面！";
+            g4State.sel = null; g4Draw("# 違反大小規則"); return;
+        }
         g4State.pegs[src].pop(); g4State.pegs[dst].push(disk); g4State.moves++; g4State.sel = null;
+        g4State.lastMoveArc = { src: src, dst: dst, disk: disk };
         sfxSwap();
-        spawnSparks(e.clientX, e.clientY, "#69f0ae");
-        document.getElementById("g4Status").innerText = "步數：" + g4State.moves + " 步";
-        const pL = ["A","B","C","D"]; g4Draw("d = stack_" + pL[src] + ".pop()" + NL + "stack_" + pL[dst] + ".append(d)");
+        stBar.className = "status-bar";
+        stBar.innerText = "✅ 將「環 " + disk + "」從 " + pL[src] + " 柱移至 " + pL[dst] + " 柱 (累計：" + g4State.moves + " 步)";
+        g4Draw("d = stack_" + pL[src] + ".pop()" + NL + "stack_" + pL[dst] + ".append(d)");
         if (g4State.pegs[lvl.target].length === g4State.totalDisks) awardStars(3, appState.currentLevel, g4State.moves <= lvl.opt ? 3 : (g4State.moves <= lvl.opt+4 ? 2 : 1));
     }
 }
 
-// --- 遊戲 5：像素解碼器 ---
-let g5State = { target: [], player: [], editTarget: false, mistakes: 0 };
+// ============================================================================
+// 遊戲 5：🎨 像素解碼器 (含單格局部聚焦框 + 二進位權重加減提示)
+// ============================================================================
+let g5State = { target: [], player: [], editTarget: false, mistakes: 0, lastCell: null };
 
 function initGame5(lIdx) {
     if (lIdx === 20 && appState.customLevels.g5) G5_LEVELS[20] = JSON.parse(JSON.stringify(appState.customLevels.g5));
@@ -1533,13 +1629,13 @@ function initGame5(lIdx) {
     document.getElementById("lvlDesc").innerText = "根據上方「連續亮格數」與右側「二進位加總密碼 (32, 16, 8, 4, 2, 1)」，點擊格子切換 0 與 1！";
     g5State.target = lvl.grid.map(r => r.split("").map(Number));
     g5State.player = Array.from({length:6}, ()=>[0,0,0,0,0,0]);
-    g5State.editTarget = false; g5State.mistakes = 0;
+    g5State.editTarget = false; g5State.mistakes = 0; g5State.lastCell = null;
 
     const customBtn = (lIdx === 20) ? `<button class="cmd-btn" id="g5CreatorBtn" style="background:#ff80ab; padding:7px 14px;" onclick="g5ToggleCreator()">🎨 繪製自訂謎題</button>` : "";
     document.getElementById("stageContent").innerHTML = `<div style="text-align:center;">
         <canvas id="g5Canvas" width="700" height="375"></canvas>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-            <div class="status-bar" style="margin:0;">💡 密碼完全吻合時會變成綠色 ✅！</div>
+            <div class="status-bar" id="g5Status" style="margin:0;">💡 點擊方格切換 0 與 1，當整列或整行密碼吻合時會變成綠色 ✅！</div>
             <div style="display:flex; gap:6px;">${customBtn}<button class="cmd-btn" style="background:#ffb74d; padding:7px 14px;" onclick="sfxClick(); initGame5(${lIdx})">🗑️ 清空</button></div>
         </div>
     </div>`;
@@ -1594,11 +1690,20 @@ function g5Draw() {
         ctx.textAlign = "center";
         for (let c = 0; c < 6; c++) {
             const x1 = ox + c*cs, y1 = oy + r*cs, v = board[r][c];
-            const fillCol = v ? (g5State.editTarget ? "#ff80ab" : "#29b6f6") : "#161925";
-            ctx.fillStyle = fillCol;
-            ctx.strokeStyle = v ? "#fff" : "#37474f"; ctx.lineWidth = 2;
-            drawRoundBox(ctx, x1+2, y1+2, cs-4, cs-4, 6, v ? fillCol : null);
-            ctx.fillStyle = v ? "#111" : "#546e7a"; ctx.font = "bold 15px Consolas"; ctx.fillText(String(v), x1+cs/2, y1+cs/2);
+            const isLast = g5State.lastCell && g5State.lastCell.r === r && g5State.lastCell.c === c;
+            ctx.fillStyle = v ? (g5State.editTarget ? "#ff80ab" : "#29b6f6") : "#161925";
+            ctx.strokeStyle = isLast ? "#ffd54f" : (v ? "#fff" : "#37474f");
+            ctx.lineWidth = isLast ? 3 : 1.8;
+            drawRoundBox(ctx, x1+2, y1+2, cs-4, cs-4, 6);
+            ctx.fillStyle = v ? "#111" : "#546e7a"; ctx.font = "bold 15px Consolas";
+            ctx.fillText(String(v), x1+cs/2, y1+cs/2);
+
+            // 在剛點擊的那一格右上角顯示局部權重變化提示 (如 +16 或 -16)
+            if (isLast) {
+                ctx.fillStyle = v ? "#ffd54f" : "#ff80ab";
+                ctx.font = "bold 10px Consolas";
+                ctx.fillText((v ? "+" : "-") + wts[c], x1 + cs - 14, y1 + 11);
+            }
         }
     }
     const r0 = board[0], d0 = r0.reduce((a,v,i)=>a+v*wts[i],0);
@@ -1614,16 +1719,30 @@ function g5CanvasClick(e) {
     const x = (e.clientX - rect.left) * (700 / rect.width), y = (e.clientY - rect.top) * (375 / rect.height);
     const c = Math.floor((x - 160) / 48), r = Math.floor((y - 72) / 48);
     if (r < 0 || r >= 6 || c < 0 || c >= 6) return;
-    if (g5State.editTarget) { sfxClick(); g5State.target[r][c] = 1 - g5State.target[r][c]; g5Draw(); return; }
+    const wts = [32, 16, 8, 4, 2, 1];
+    const stBar = document.getElementById("g5Status");
+
+    if (g5State.editTarget) {
+        sfxClick(); g5State.target[r][c] = 1 - g5State.target[r][c];
+        g5State.lastCell = { r: r, c: c };
+        g5Draw(); return;
+    }
+
     g5State.player[r][c] = 1 - g5State.player[r][c];
-    if (g5State.player[r][c] === 1 && g5State.target[r][c] === 0) {
+    g5State.lastCell = { r: r, c: c };
+    const newVal = g5State.player[r][c];
+
+    if (newVal === 1 && g5State.target[r][c] === 0) {
         g5State.mistakes++;
-        sfxError();
+        sfxClick();
     } else {
         sfxClick();
-        spawnSparks(e.clientX, e.clientY, g5State.player[r][c] ? "#29b6f6" : "#b0bec5");
     }
+    const rowSum = g5State.player[r].reduce((a,v,i)=>a+v*wts[i], 0);
+    stBar.className = "status-bar";
+    stBar.innerText = "👆 點擊座標 [" + r + "][" + c + "] 切換為 " + newVal + " (權重 " + (newVal ? "+" : "-") + wts[c] + ") ➔ 第 " + r + " 列目前總和：" + rowSum;
     g5Draw();
+
     if (g5State.player.every((row, ri) => row.every((v, ci) => v === g5State.target[ri][ci]))) {
         awardStars(4, appState.currentLevel, g5State.mistakes <= 2 ? 3 : (g5State.mistakes <= 6 ? 2 : 1));
     }
