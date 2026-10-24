@@ -40,7 +40,7 @@ with st.sidebar:
     st.markdown("### 🌌 星際邏輯學院 Web 2.0")
     st.markdown("""
     - **5 大運算思維遊戲 × 各 20 關 + 自製沙盒 (共 105 關)**
-    - 🖥️ **居中大視窗版面**：中央放大遊戲舞台、緊湊型指令按鈕、底部橫向演算法透視窗。
+    - 🖥️ **黃金比例雙欄舞台**：左側大尺寸地圖畫布、右側等高寬版動作面板、底部橫向演算法透視窗。
     - ⏳ **家長計時器**：頂部顯示「小時/分鐘/秒」倒數，時間到自動存檔並鎖定畫面（需家長授權密碼解鎖）。
     - 📱 **手機/平板適應**：可使用頂部「🔍縮放」滑桿調整大小，支援雙指縮放。
     - 💾 **跨裝置存檔**：點擊右上角「存檔」可下載 `.json` 存檔或複製通行碼。
@@ -132,73 +132,75 @@ GAME_HTML = r'''<!DOCTYPE html>
     .lvl-btn.active { background: var(--blue); color: #000; border-color: #fff; }
     .lvl-btn.custom { background: linear-gradient(135deg, #ff80ab, #f50057); color: #fff; }
 
-    /* 主版面：上下垂直堆疊（上方居中大舞台 + 下方紅框處全寬 Python 演算法透視窗） */
+    /* 主版面：上下垂直堆疊（上方居中大舞台 + 下方全寬 Python 演算法透視窗） */
     .main-layout {
         display: flex; flex-direction: column; gap: 10px;
         transform-origin: top center; transition: transform 0.15s ease;
     }
     .stage-card {
         background: var(--bg-panel); border-radius: 14px;
-        border: 1px solid rgba(100,181,246,0.25); padding: 12px 16px;
+        border: 1px solid rgba(100,181,246,0.25); padding: 14px 20px;
         box-shadow: 0 6px 24px rgba(0,0,0,0.45);
     }
     .stage-header {
-        text-align: center; margin-bottom: 10px;
+        text-align: center; margin-bottom: 12px;
     }
-    .lvl-title { font-size: 1.18rem; font-weight: bold; color: var(--gold); margin-bottom: 3px; }
-    .lvl-desc { font-size: 0.9rem; color: var(--sub); line-height: 1.35; }
+    .lvl-title { font-size: 1.2rem; font-weight: bold; color: var(--gold); margin-bottom: 4px; }
+    .lvl-desc { font-size: 0.92rem; color: var(--sub); line-height: 1.35; }
 
-    /* 遊戲舞台內部居中配置：大動作視窗在中間 + 緊湊小巧的動作按鈕在旁 */
+    /* 遊戲舞台內部配置：左側大動作視窗 + 右側與紅框同尺寸的寬版動作面板 (等高對齊) */
     .game-flex {
-        display: flex; flex-wrap: wrap; gap: 22px;
-        align-items: center; justify-content: center;
+        display: flex; flex-wrap: wrap; gap: 26px;
+        align-items: stretch; justify-content: center;
     }
     canvas {
         background: #0b0e17; border-radius: 12px; border: 2px solid rgba(100,181,246,0.45);
         max-width: 100%; height: auto; touch-action: manipulation;
         box-shadow: 0 6px 20px rgba(0,0,0,0.55);
     }
-    /* 大型畫布尺寸強化 (讓第 2~5 關的動作視窗在中間更大更清楚) */
     .wide-canvas {
-        width: 800px; max-width: 100%; height: auto;
+        width: 820px; max-width: 100%; height: auto;
     }
-    /* 緊湊型小巧控制面板 (固定 290px 寬，不再被拉長成巨型橫條) */
+    /* 右側動作積木面板：放大至紅框範圍 (寬 480~520px，高度與左側地圖+狀態列等高) */
     .ctrl-box {
-        flex: 0 0 290px; width: 290px; max-width: 100%;
-        background: rgba(15,17,26,0.88);
-        border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1);
-        box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+        flex: 1 1 460px; max-width: 520px; min-height: 548px;
+        background: rgba(15,17,26,0.9);
+        border-radius: 14px; padding: 16px 18px;
+        border: 1px solid rgba(100,181,246,0.22);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.45);
+        display: flex; flex-direction: column; justify-content: space-between;
     }
     .block-grid {
-        display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 7px;
+        display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 10px;
     }
     .cmd-btn {
-        border: none; border-radius: 7px; padding: 6px 8px;
-        font-size: 0.82rem; font-weight: bold; cursor: pointer; color: #111;
+        border: none; border-radius: 9px; padding: 11px 12px;
+        font-size: 0.95rem; font-weight: bold; cursor: pointer; color: #111;
         transition: transform 0.08s, filter 0.15s;
     }
     .cmd-btn:hover { filter: brightness(1.1); }
-    .cmd-btn:active { transform: scale(0.95); }
+    .cmd-btn:active { transform: scale(0.96); }
     .cmd-list {
-        background: #090b10; border-radius: 8px; padding: 6px;
-        height: 210px; overflow-y: auto; font-family: Consolas, monospace;
-        font-size: 0.83rem; border: 1px solid #2c3146; margin-top: 5px;
-        text-align: left;
+        background: #090b10; border-radius: 10px; padding: 10px 12px;
+        flex: 1; min-height: 220px; max-height: 275px; overflow-y: auto;
+        font-family: Consolas, "Microsoft JhengHei", monospace;
+        font-size: 0.92rem; border: 1px solid #2c3146; margin-top: 6px;
+        text-align: left; line-height: 1.5;
     }
-    .cmd-item { padding: 3px 5px; border-radius: 4px; }
+    .cmd-item { padding: 4px 6px; border-radius: 5px; }
     .cmd-item.running { background: rgba(255,213,79,0.28); border-left: 4px solid var(--gold); color: #fff; font-weight: bold; }
 
     .status-bar {
-        margin-top: 8px; padding: 7px 12px; border-radius: 8px;
+        margin-top: 8px; padding: 9px 14px; border-radius: 9px;
         background: rgba(105,240,174,0.12); border-left: 4px solid var(--green);
-        font-weight: bold; font-size: 0.88rem; color: var(--green);
+        font-weight: bold; font-size: 0.9rem; color: var(--green);
         transition: all 0.2s; text-align: left;
     }
     .status-bar.err {
         background: rgba(255, 128, 171, 0.15); border-left-color: var(--pink); color: var(--pink);
     }
 
-    /* 底部紅框區域：全寬橫向「🐍 即時 Python 演算法透視窗」 */
+    /* 底部區域：全寬橫向「🐍 即時 Python 演算法透視窗」 */
     .bottom-algo-dock {
         background: var(--bg-panel); border-radius: 14px;
         border: 1px solid rgba(105, 240, 174, 0.3); padding: 10px 16px;
@@ -278,7 +280,7 @@ GAME_HTML = r'''<!DOCTYPE html>
 
 <div class="level-bar" id="levelBar"></div>
 
-<!-- 主工作區：上方為居中大動作舞台，下方紅框位置為橫向 Python 演算法透視窗 -->
+<!-- 主工作區：上方為居中大動作舞台與右側大面板，下方為橫向 Python 演算法透視窗 -->
 <div class="main-layout" id="mainGrid">
     <div class="stage-card" id="mainStageCard">
         <div class="stage-header">
@@ -288,7 +290,7 @@ GAME_HTML = r'''<!DOCTYPE html>
         <div id="stageContent"></div>
     </div>
 
-    <!-- 底部紅框位置：即時 Python 演算法透視窗 -->
+    <!-- 底部：即時 Python 演算法透視窗 -->
     <div class="bottom-algo-dock">
         <div>
             <div style="font-size:0.95rem; font-weight:bold; color:#69f0ae; margin-bottom:5px;">
@@ -334,7 +336,7 @@ GAME_HTML = r'''<!DOCTYPE html>
 const NL = String.fromCharCode(10);
 const STORAGE_KEY = "STAR_LOGIC_ACADEMY_SAVE_V3";
 const TIMER_KEY = "STAR_LOGIC_PARENT_TIMER_V3";
-// 家長密碼為 8888，不顯示於任何 UI 提示中
+// 家長預設密碼修正為 8888，且不顯示於任何 UI 文字中
 const PARENT_PIN = "8888";
 
 let appState = { currentGame: 0, currentLevel: 0, stars: {}, customLevels: {} };
@@ -463,7 +465,7 @@ function fireConfetti() {
 }
 
 // ============================================================================
-// 家長倒數計時器核心邏輯 (時/分/秒 顯示 + 自動存檔關閉 + 密碼 8888 隱藏)
+// 家長倒數計時器核心邏輯 (時/分/秒 顯示 + 自動存檔關閉 + 預設密碼 8888 隱藏)
 // ============================================================================
 function initParentalTimer() {
     try {
@@ -918,10 +920,10 @@ function updatePythonBox(code, tip) {
 }
 
 // ============================================================================
-// 遊戲 1：🚀 星際編碼號 (504x504 居中大動作視窗 + 290px 小巧緊湊動作按鈕面板)
+// 遊戲 1：🚀 星際編碼號 (左側 504x504 大視窗 + 右側紅框大尺寸等高動作面板)
 // ============================================================================
 const G1_CS = 72;
-const G1_CANVAS_SIZE = 504; // 7 * 72 = 504 大尺寸地圖畫布
+const G1_CANVAS_SIZE = 504;
 let g1State = {
     cmds: [], grid: [], rx:1, ry:5, rdir:0, laserOn:true, gotC:0, totalC:0,
     timer:null, brush:1, trace:[], localFx:null
@@ -946,30 +948,34 @@ function initGame1(lIdx) {
     </div>` : "";
 
     document.getElementById("stageContent").innerHTML = `<div class="game-flex">
-        <div style="text-align:center;">
+        <div style="display:flex; flex-direction:column; justify-content:space-between;">
             <canvas id="g1Canvas" width="${G1_CANVAS_SIZE}" height="${G1_CANVAS_SIZE}"></canvas>
-            <div class="status-bar" id="g1Status" style="max-width:${G1_CANVAS_SIZE}px;">🤖 機器人就緒！請在右側點擊積木編排程式。</div>
+            <div class="status-bar" id="g1Status" style="width:${G1_CANVAS_SIZE}px; max-width:100%;">🤖 機器人就緒！請在右側點擊積木編排程式。</div>
             ${customHtml}
         </div>
         <div class="ctrl-box">
-            <div style="font-size:0.84rem; font-weight:bold; color:#4dd0e1; margin-bottom:6px; text-align:left;">🧩 動作積木面板：</div>
-            <div class="block-grid">
-                <button class="cmd-btn" style="background:#64b5f6;" onclick="g1Add('MOVE')">⬆️ 前進</button>
-                <button class="cmd-btn" style="background:#4dd0e1;" onclick="g1Add('LEFT')">↩️ 左轉</button>
-                <button class="cmd-btn" style="background:#4dd0e1;" onclick="g1Add('RIGHT')">↪️ 右轉</button>
-                <button class="cmd-btn" style="background:#ffd54f;" onclick="g1Add('SWITCH')">👆 開關</button>
-                <button class="cmd-btn" style="background:#b388ff;" onclick="g1Add('LOOP_2')">🔄 重複 2 次</button>
-                <button class="cmd-btn" style="background:#b388ff;" onclick="g1Add('LOOP_3')">🔄 重複 3 次</button>
-                <button class="cmd-btn" style="background:#b388ff;" onclick="g1Add('LOOP_4')">🔄 重複 4 次</button>
-                <button class="cmd-btn" style="background:#ea80fc;" onclick="g1Add('END_LOOP')">🔚 結束重複</button>
+            <div>
+                <div style="font-size:1rem; font-weight:bold; color:#4dd0e1; margin-bottom:10px; text-align:left;">🧩 動作積木面板：</div>
+                <div class="block-grid">
+                    <button class="cmd-btn" style="background:#64b5f6;" onclick="g1Add('MOVE')">⬆️ 前進</button>
+                    <button class="cmd-btn" style="background:#4dd0e1;" onclick="g1Add('LEFT')">↩️ 左轉</button>
+                    <button class="cmd-btn" style="background:#4dd0e1;" onclick="g1Add('RIGHT')">↪️ 右轉</button>
+                    <button class="cmd-btn" style="background:#ffd54f;" onclick="g1Add('SWITCH')">👆 開關</button>
+                    <button class="cmd-btn" style="background:#b388ff;" onclick="g1Add('LOOP_2')">🔄 重複 2 次</button>
+                    <button class="cmd-btn" style="background:#b388ff;" onclick="g1Add('LOOP_3')">🔄 重複 3 次</button>
+                    <button class="cmd-btn" style="background:#b388ff;" onclick="g1Add('LOOP_4')">🔄 重複 4 次</button>
+                    <button class="cmd-btn" style="background:#ea80fc;" onclick="g1Add('END_LOOP')">🔚 結束重複</button>
+                </div>
+                <div style="display:flex; gap:8px; margin-bottom:12px;">
+                    <button class="cmd-btn" style="background:#69f0ae; flex:1.6;" onclick="g1Run()">▶️ 執行</button>
+                    <button class="cmd-btn" style="background:#ffb74d; flex:1;" onclick="g1Pop()">⌫ 退回</button>
+                    <button class="cmd-btn" style="background:#ff80ab; flex:1;" onclick="g1Clear()">🗑️ 清空</button>
+                </div>
             </div>
-            <div style="display:flex; gap:5px; margin-bottom:7px;">
-                <button class="cmd-btn" style="background:#69f0ae; flex:1.6;" onclick="g1Run()">▶️ 執行</button>
-                <button class="cmd-btn" style="background:#ffb74d; flex:1;" onclick="g1Pop()">⌫ 退回</button>
-                <button class="cmd-btn" style="background:#ff80ab; flex:1;" onclick="g1Clear()">🗑️ 清空</button>
+            <div style="display:flex; flex-direction:column; flex:1;">
+                <div style="font-size:0.9rem; color:#ffd54f; font-weight:bold; text-align:left;" id="g1CmdHeader"></div>
+                <div class="cmd-list" id="g1CmdList"></div>
             </div>
-            <div style="font-size:0.8rem; color:#ffd54f; font-weight:bold; text-align:left;" id="g1CmdHeader"></div>
-            <div class="cmd-list" id="g1CmdList"></div>
         </div>
     </div>`;
     document.getElementById("g1Canvas").addEventListener("click", g1CanvasClick);
@@ -1237,7 +1243,7 @@ function g1Run() {
 }
 
 // ============================================================================
-// 遊戲 2：⚡ 光子邏輯閘 (居中放大畫布 + 緊湊控制列)
+// 遊戲 2：⚡ 光子邏輯閘
 // ============================================================================
 let g2State = { inVals: [0,0,0,0], clicks: 0, finalOut: 0, lastChangedIdx: -1 };
 
@@ -1247,7 +1253,7 @@ function initGame2(lIdx) {
     document.getElementById("lvlTitle").innerText = "⚡ " + lvl.name;
     document.getElementById("lvlDesc").innerText = lvl.desc;
     g2State.inVals = [0,0,0,0]; g2State.clicks = 0; g2State.lastChangedIdx = -1;
-    document.getElementById("stageContent").innerHTML = `<div style="max-width:800px; margin:0 auto; text-align:center;">
+    document.getElementById("stageContent").innerHTML = `<div style="max-width:820px; margin:0 auto; text-align:center;">
         <canvas id="g2Canvas" class="wide-canvas" width="700" height="360"></canvas>
         <div class="status-bar" id="g2Status" style="margin-bottom:8px;">
             ⚡ 請點擊左側開關切換 0 與 1，觀察邏輯閘輸出變化。
@@ -1392,7 +1398,7 @@ function g2CheckWin() {
 }
 
 // ============================================================================
-// 遊戲 3：⚖️ 能量排序室 (居中放大畫布 + 雙瓶交換局部弧線箭頭)
+// 遊戲 3：⚖️ 能量排序室
 // ============================================================================
 let g3State = { arr: [], sel: null, swaps: 0, lastSwapPair: null };
 
@@ -1409,7 +1415,7 @@ function initGame3(lIdx) {
         <button class="brush-btn" onclick="g3ToggleAdj()">相鄰限制: ${lvl.adj?'開':'關'}</button>
     </div>` : "";
 
-    document.getElementById("stageContent").innerHTML = `<div style="max-width:800px; margin:0 auto; text-align:center;">
+    document.getElementById("stageContent").innerHTML = `<div style="max-width:820px; margin:0 auto; text-align:center;">
         <canvas id="g3Canvas" class="wide-canvas" width="700" height="340"></canvas>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:8px;">
             <div class="status-bar" id="g3Status" style="margin:0; flex:1;">已交換：0 次 （點擊兩瓶能量管交換位置）</div>
@@ -1532,7 +1538,7 @@ function g3CanvasClick(e) {
 }
 
 // ============================================================================
-// 遊戲 4：🗼 星際河內塔 (居中放大畫布 + 柱間移動局部弧線軌跡)
+// 遊戲 4：🗼 星際河內塔
 // ============================================================================
 let g4State = { pegs: [], sel: null, moves: 0, totalDisks: 0, lastMoveArc: null };
 
@@ -1555,7 +1561,7 @@ function initGame4(lIdx) {
         <button class="brush-btn" onclick="g4Custom(null,'ADJ')">相鄰限制</button>
     </div>` : "";
 
-    document.getElementById("stageContent").innerHTML = `<div style="max-width:800px; margin:0 auto; text-align:center;">
+    document.getElementById("stageContent").innerHTML = `<div style="max-width:820px; margin:0 auto; text-align:center;">
         <canvas id="g4Canvas" class="wide-canvas" width="700" height="340"></canvas>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:8px;">
             <div class="status-bar" id="g4Status" style="margin:0; flex:1;">步數：0 步 （點擊來源柱取出頂端環，再點目標柱放入）</div>
@@ -1666,7 +1672,7 @@ function g4CanvasClick(e) {
 }
 
 // ============================================================================
-// 遊戲 5：🎨 像素解碼器 (居中放大畫布 + 單格聚焦框與權重加減提示)
+// 遊戲 5：🎨 像素解碼器
 // ============================================================================
 let g5State = { target: [], player: [], editTarget: false, mistakes: 0, lastCell: null };
 
@@ -1680,7 +1686,7 @@ function initGame5(lIdx) {
     g5State.editTarget = false; g5State.mistakes = 0; g5State.lastCell = null;
 
     const customBtn = (lIdx === 20) ? `<button class="cmd-btn" id="g5CreatorBtn" style="background:#ff80ab; padding:7px 14px;" onclick="g5ToggleCreator()">🎨 繪製自訂謎題</button>` : "";
-    document.getElementById("stageContent").innerHTML = `<div style="max-width:800px; margin:0 auto; text-align:center;">
+    document.getElementById("stageContent").innerHTML = `<div style="max-width:820px; margin:0 auto; text-align:center;">
         <canvas id="g5Canvas" class="wide-canvas" width="700" height="375"></canvas>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:8px;">
             <div class="status-bar" id="g5Status" style="margin:0; flex:1;">💡 點擊方格切換 0 與 1，當整列或整行密碼吻合時會變成綠色 ✅！</div>
@@ -1802,5 +1808,5 @@ switchGame(0);
 </body>
 </html>'''
 
-components.html(GAME_HTML, height=900, scrolling=True)
+components.html(GAME_HTML, height=920, scrolling=True)
 # === 檔案結束 (請確認複製到此行) ===
