@@ -40,7 +40,8 @@ with st.sidebar:
     st.markdown("### 🌌 星際邏輯學院 Web 2.0")
     st.markdown("""
     - **5 大運算思維遊戲 × 各 20 關 + 自製沙盒 (共 105 關)**
-    - ⏳ **家長計時器**：頂部顯示「小時/分鐘/秒」倒數，時間到自動存檔並鎖定關閉畫面（預設家長密碼：`8888`）。
+    - 🔊 **聲光特效版**：內建太空合成音效、霓虹光影與煙火粒子動畫。
+    - ⏳ **家長計時器**：頂部顯示「小時/分鐘/秒」倒數，時間到自動存檔並鎖定畫面（需家長授權密碼解鎖）。
     - 📱 **手機/平板適應**：可使用頂部「🔍縮放」滑桿調整大小，支援雙指縮放。
     - 💾 **跨裝置存檔**：點擊右上角「存檔管理」可下載 `.json` 存檔或複製通行碼。
     """)
@@ -73,23 +74,27 @@ GAME_HTML = r'''<!DOCTYPE html>
     }
     .top-header {
         display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-        background: var(--bg-panel); border: 1px solid rgba(100,181,246,0.3);
+        background: var(--bg-panel); border: 1px solid rgba(100,181,246,0.4);
         border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; gap: 8px;
+        box-shadow: 0 0 20px rgba(77, 208, 225, 0.15);
     }
     .brand {
         font-size: 1.15rem; font-weight: 900;
         background: linear-gradient(90deg, #ffd54f, #4dd0e1, #ff80ab);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 12px rgba(255,213,79,0.3);
     }
     .nav-tabs { display: flex; flex-wrap: wrap; gap: 5px; }
     .nav-btn {
         background: var(--bg-card); color: var(--text);
         border: 1px solid rgba(255,255,255,0.12); border-radius: 9px;
         padding: 6px 10px; font-size: 0.84rem; font-weight: bold; cursor: pointer;
+        transition: all 0.2s;
     }
+    .nav-btn:hover { border-color: var(--cyan); box-shadow: 0 0 8px rgba(77,208,225,0.4); }
     .nav-btn.active {
         background: linear-gradient(135deg, #ffd54f, #ffb300);
-        color: #111; border-color: #fff; box-shadow: 0 0 10px rgba(255,213,79,0.5);
+        color: #111; border-color: #fff; box-shadow: 0 0 14px rgba(255,213,79,0.7);
     }
     .header-right { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .timer-badge {
@@ -97,28 +102,44 @@ GAME_HTML = r'''<!DOCTYPE html>
         color: var(--cyan); padding: 4px 10px; border-radius: 20px;
         font-weight: bold; font-size: 0.85rem; cursor: pointer;
         font-family: Consolas, "Microsoft JhengHei", monospace;
+        box-shadow: 0 0 10px rgba(77,208,225,0.25);
         transition: all 0.3s;
     }
     .timer-badge.warn {
         background: rgba(255, 183, 77, 0.2); border-color: #ffb74d; color: #ffb74d;
+        box-shadow: 0 0 12px rgba(255,183,77,0.5);
     }
     .timer-badge.danger {
         background: rgba(255, 64, 129, 0.25); border-color: #ff4081; color: #ff80ab;
-        animation: pulse 1s infinite;
+        box-shadow: 0 0 15px rgba(255,64,129,0.8);
+        animation: pulse 0.8s infinite;
     }
     @keyframes pulse {
         0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
+        50% { transform: scale(1.06); }
         100% { transform: scale(1); }
+    }
+    @keyframes errShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-8px); }
+        40%, 80% { transform: translateX(8px); }
+    }
+    .shake-Error {
+        animation: errShake 0.4s ease;
+        border-color: #ff4081 !important;
+        box-shadow: 0 0 25px rgba(255, 64, 129, 0.85) !important;
     }
     .star-badge {
         background: rgba(105,240,174,0.15); border: 1px solid var(--green);
         color: var(--green); padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;
+        box-shadow: 0 0 10px rgba(105,240,174,0.25);
     }
     .tool-btn {
         background: #37474f; color: #fff; border: 1px solid var(--cyan);
         padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: bold;
+        transition: 0.2s;
     }
+    .tool-btn:hover { background: var(--cyan); color: #111; box-shadow: 0 0 10px var(--cyan); }
     .level-bar {
         display: flex; align-items: center; gap: 5px; overflow-x: auto;
         background: var(--bg-panel); padding: 7px 10px; border-radius: 11px;
@@ -129,7 +150,7 @@ GAME_HTML = r'''<!DOCTYPE html>
         border: 1px solid rgba(255,255,255,0.1); border-radius: 7px;
         padding: 5px 9px; font-size: 0.8rem; font-weight: bold; cursor: pointer;
     }
-    .lvl-btn.active { background: var(--blue); color: #000; border-color: #fff; }
+    .lvl-btn.active { background: var(--blue); color: #000; border-color: #fff; box-shadow: 0 0 10px var(--blue); }
     .lvl-btn.custom { background: linear-gradient(135deg, #ff80ab, #f50057); color: #fff; }
     .main-grid {
         display: grid; grid-template-columns: 1fr 340px; gap: 10px;
@@ -138,14 +159,16 @@ GAME_HTML = r'''<!DOCTYPE html>
     @media (max-width: 920px) { .main-grid { grid-template-columns: 1fr; } }
     .card {
         background: var(--bg-panel); border-radius: 14px;
-        border: 1px solid rgba(255,255,255,0.1); padding: 12px;
-        box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+        border: 1px solid rgba(100,181,246,0.22); padding: 12px;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .lvl-title { font-size: 1.15rem; font-weight: bold; color: var(--gold); margin-bottom: 4px; }
+    .lvl-title { font-size: 1.15rem; font-weight: bold; color: var(--gold); margin-bottom: 4px; text-shadow: 0 0 8px rgba(255,213,79,0.3); }
     .lvl-desc { font-size: 0.9rem; color: var(--sub); margin-bottom: 10px; line-height: 1.4; }
     .game-flex { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; justify-content: center; }
     canvas {
-        background: #0b0e17; border-radius: 12px; border: 2px solid rgba(100,181,246,0.35);
+        background: #0b0e17; border-radius: 12px; border: 2px solid rgba(100,181,246,0.45);
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.8), 0 0 15px rgba(100,181,246,0.2);
         max-width: 100%; height: auto; touch-action: manipulation;
     }
     .ctrl-box {
@@ -156,15 +179,17 @@ GAME_HTML = r'''<!DOCTYPE html>
     .cmd-btn {
         border: none; border-radius: 8px; padding: 8px 6px;
         font-size: 0.88rem; font-weight: bold; cursor: pointer; color: #111;
+        transition: transform 0.1s, box-shadow 0.2s;
     }
-    .cmd-btn:active { transform: scale(0.95); }
+    .cmd-btn:hover { box-shadow: 0 0 12px rgba(255,255,255,0.4); }
+    .cmd-btn:active { transform: scale(0.93); }
     .cmd-list {
         background: #090b10; border-radius: 8px; padding: 6px;
         height: 185px; overflow-y: auto; font-family: Consolas, monospace;
         font-size: 0.86rem; border: 1px solid #2c3146; margin-top: 5px;
     }
     .cmd-item { padding: 3px 5px; border-radius: 4px; }
-    .cmd-item.running { background: rgba(255,128,171,0.35); border-left: 3px solid var(--pink); color: #fff; }
+    .cmd-item.running { background: rgba(255,128,171,0.35); border-left: 3px solid var(--pink); color: #fff; box-shadow: 0 0 8px rgba(255,128,171,0.5); }
     .status-bar {
         margin-top: 8px; padding: 7px 10px; border-radius: 8px;
         background: rgba(105,240,174,0.12); border-left: 4px solid var(--green);
@@ -187,6 +212,7 @@ GAME_HTML = r'''<!DOCTYPE html>
     .modal-box {
         background: #1a1e2e; border: 2px solid var(--cyan); border-radius: 14px;
         max-width: 500px; width: 100%; padding: 18px; text-align: center;
+        box-shadow: 0 0 35px rgba(77, 208, 225, 0.45);
     }
     /* 時間到鎖定全螢幕遮罩 */
     .lock-overlay {
@@ -203,7 +229,7 @@ GAME_HTML = r'''<!DOCTYPE html>
         background: #2c3146; color: #fff; border: 1px solid transparent;
         padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
     }
-    .brush-btn.active { border-color: var(--gold); background: #3f4765; }
+    .brush-btn.active { border-color: var(--gold); background: #3f4765; box-shadow: 0 0 8px var(--gold); }
     .time-input {
         width: 65px; background: #090b10; color: #69f0ae; border: 1px solid #4dd0e1;
         border-radius: 6px; padding: 6px; font-size: 1rem; text-align: center; font-weight: bold;
@@ -213,7 +239,7 @@ GAME_HTML = r'''<!DOCTYPE html>
 <body>
 
 <div class="top-header">
-    <div class="brand">🚀 星際邏輯學院 <span style="font-size:0.75rem; color:#4dd0e1;">105關旗艦版</span></div>
+    <div class="brand">🚀 星際邏輯學院 <span style="font-size:0.75rem; color:#4dd0e1;">105關聲光旗艦版</span></div>
     <div class="nav-tabs" id="gameTabs">
         <button class="nav-btn active" onclick="switchGame(0)">1️⃣ 星際編碼號</button>
         <button class="nav-btn" onclick="switchGame(1)">2️⃣ 光子邏輯閘</button>
@@ -222,22 +248,23 @@ GAME_HTML = r'''<!DOCTYPE html>
         <button class="nav-btn" onclick="switchGame(4)">5️⃣ 像素解碼器</button>
     </div>
     <div class="header-right">
+        <button class="tool-btn" id="soundToggleBtn" onclick="toggleSound()">🔊 音效: 開</button>
         <div class="timer-badge" id="timerBadge" onclick="openTimerModal()" title="點擊設定家長倒數計時器">
             ⏳ 00時 30分 00秒
         </div>
         <div style="display:flex; align-items:center; gap:3px; font-size:0.8rem; color:#b0bec5;">
-            🔍縮放:<input type="range" min="65" max="135" value="100" style="width:65px;" oninput="applyZoom(this.value)">
+            🔍縮放:<input type="range" min="65" max="135" value="100" style="width:60px;" oninput="applyZoom(this.value)">
             <span id="zoomVal">100%</span>
         </div>
         <div class="star-badge" id="totalStarsBadge">🏆 0 / 300 ⭐</div>
-        <button class="tool-btn" onclick="openSaveModal()">💾 存檔管理</button>
+        <button class="tool-btn" onclick="openSaveModal()">💾 存檔</button>
     </div>
 </div>
 
 <div class="level-bar" id="levelBar"></div>
 
 <div class="main-grid" id="mainGrid">
-    <div class="card">
+    <div class="card" id="mainStageCard">
         <div class="lvl-title" id="lvlTitle">載入關卡中...</div>
         <div class="lvl-desc" id="lvlDesc"></div>
         <div id="stageContent"></div>
@@ -252,9 +279,9 @@ GAME_HTML = r'''<!DOCTYPE html>
 <!-- 一般彈跳視窗 -->
 <div class="modal-overlay" id="modalOverlay"><div class="modal-box" id="modalContent"></div></div>
 
-<!-- 家長計時器時間到鎖定與關閉畫面 -->
+<!-- 家長計時器時間到鎖定與關閉畫面 (密碼完全隱藏) -->
 <div class="lock-overlay" id="lockOverlay">
-    <div style="max-width:480px; background:#181c2b; border:2px solid #ffd54f; border-radius:18px; padding:28px; box-shadow:0 12px 45px rgba(0,0,0,0.85);">
+    <div style="max-width:480px; background:#181c2b; border:2px solid #ffd54f; border-radius:18px; padding:28px; box-shadow:0 0 50px rgba(255,213,79,0.5);">
         <div style="font-size:3.5rem; margin-bottom:8px;">⏰</div>
         <h2 style="color:#ffd54f; margin:0 0 10px 0;">今日遊玩時間已到！</h2>
         <p style="color:#69f0ae; font-weight:bold; font-size:1rem; margin-bottom:8px;">
@@ -262,10 +289,10 @@ GAME_HTML = r'''<!DOCTYPE html>
         </p>
         <p style="color:#b0bec5; font-size:0.9rem; line-height:1.5; margin-bottom:18px;">
             優秀的太空工程師也需要讓眼睛休息喔！請離開螢幕遠眺休息。<br>
-            （若家長需延長使用時間，請輸入家長密碼解鎖）
+            （若家長需延長使用時間，請由家長輸入授權密碼解鎖）
         </p>
         <div style="display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap;">
-            <input type="password" id="unlockPinInput" placeholder="家長密碼(預設8888)" style="background:#090b10; color:#fff; border:1px solid #4dd0e1; border-radius:8px; padding:8px 12px; width:165px; text-align:center;">
+            <input type="password" id="unlockPinInput" placeholder="請輸入家長授權密碼" style="background:#090b10; color:#fff; border:1px solid #4dd0e1; border-radius:8px; padding:8px 12px; width:175px; text-align:center;">
             <button class="cmd-btn" style="background:#69f0ae; padding:8px 16px;" onclick="parentUnlockTime()">🔓 延長 30 分鐘</button>
         </div>
         <div style="margin-top:12px;">
@@ -274,35 +301,205 @@ GAME_HTML = r'''<!DOCTYPE html>
     </div>
 </div>
 
-<canvas id="confettiCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:998; display:none;"></canvas>
+<!-- 頂層煙火與星光粒子特效 Canvas (z-index: 3000 確保顯示在所有視窗最上方) -->
+<canvas id="confettiCanvas" style="position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:3000; display:none;"></canvas>
 
 <script>
 const NL = String.fromCharCode(10);
 const STORAGE_KEY = "STAR_LOGIC_ACADEMY_SAVE_V3";
 const TIMER_KEY = "STAR_LOGIC_PARENT_TIMER_V3";
-const PARENT_PIN = "8888";
+// 家長密碼已改為 5888，且不在任何介面文字中顯示
+const PARENT_PIN = "5888";
 
 let appState = { currentGame: 0, currentLevel: 0, stars: {}, customLevels: {} };
-let timerState = {
-    remainingSec: 1800, // 預設 30 分鐘 (1800秒)
-    active: true,
-    intervalId: null
-};
+let timerState = { remainingSec: 1800, active: true, intervalId: null };
 
 // ============================================================================
-// 家長倒數計時器核心邏輯 (時/分/秒 顯示 + 自動存檔關閉)
+// Web Audio API 太空聲光音效合成器 (免外部音檔，100% 瀏覽器原生發聲)
+// ============================================================================
+let audioCtx = null;
+let soundEnabled = true;
+
+function getAudioCtx() {
+    if (!soundEnabled) return null;
+    try {
+        if (!audioCtx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === "suspended") {
+            audioCtx.resume();
+        }
+        return audioCtx;
+    } catch (e) {
+        return null;
+    }
+}
+
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    const btn = document.getElementById("soundToggleBtn");
+    if (soundEnabled) {
+        btn.innerText = "🔊 音效: 開";
+        btn.style.borderColor = "#4dd0e1";
+        sfxClick();
+    } else {
+        btn.innerText = "🔇 音效: 關";
+        btn.style.borderColor = "#ff80ab";
+    }
+}
+
+function playTone(freq, type, duration, vol, slideFreq) {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type || "sine";
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        if (slideFreq) {
+            osc.frequency.exponentialRampToValueAtTime(slideFreq, ctx.currentTime + duration);
+        }
+        gain.gain.setValueAtTime(vol || 0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + duration);
+    } catch (e) {}
+}
+
+function sfxClick() { playTone(660, "triangle", 0.08, 0.12, 880); }
+function sfxStep() { playTone(340, "sine", 0.09, 0.1, 440); }
+function sfxTurn() { playTone(480, "triangle", 0.1, 0.1, 360); }
+function sfxCrystal() {
+    playTone(987.77, "sine", 0.12, 0.16);
+    setTimeout(function() { playTone(1318.5, "sine", 0.25, 0.18); }, 90);
+}
+function sfxLaser() { playTone(880, "sawtooth", 0.22, 0.12, 220); }
+function sfxPortal() { playTone(280, "sine", 0.3, 0.15, 1120); }
+function sfxSwap() { playTone(520, "sine", 0.12, 0.15, 780); }
+function sfxError() {
+    playTone(160, "sawtooth", 0.28, 0.18, 110);
+    const card = document.getElementById("mainStageCard");
+    if (card) {
+        card.classList.remove("shake-Error");
+        void card.offsetWidth;
+        card.classList.add("shake-Error");
+    }
+}
+function sfxWin() {
+    const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+    notes.forEach(function(n, idx) {
+        setTimeout(function() {
+            playTone(n, "triangle", 0.28, 0.2);
+        }, idx * 110);
+    });
+}
+
+// 頁面首次點擊自動解鎖瀏覽器音訊限制
+document.addEventListener("pointerdown", function() { getAudioCtx(); }, { once: true });
+
+// ============================================================================
+// 全螢幕煙火與畫布星光粒子視覺特效系統
+// ============================================================================
+let sparkList = [];
+let sparkAnimId = null;
+
+function spawnSparks(clientX, clientY, colorHex) {
+    const cvs = document.getElementById("confettiCanvas");
+    cvs.style.display = "block";
+    cvs.width = window.innerWidth;
+    cvs.height = window.innerHeight;
+    for (let i = 0; i < 22; i++) {
+        const angle = (Math.PI * 2 * i) / 22 + (Math.random() - 0.5) * 0.3;
+        const speed = Math.random() * 5 + 2;
+        sparkList.push({
+            x: clientX,
+            y: clientY,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed - 1.5,
+            r: Math.random() * 4 + 3,
+            c: colorHex || ["#ffd54f","#69f0ae","#4dd0e1","#ff80ab"][i % 4],
+            alpha: 1.0
+        });
+    }
+    runSparkLoop();
+}
+
+function fireConfetti() {
+    const cvs = document.getElementById("confettiCanvas");
+    cvs.style.display = "block";
+    cvs.width = window.innerWidth;
+    cvs.height = window.innerHeight;
+    const colors = ["#ffd54f","#69f0ae","#64b5f6","#ff80ab","#b388ff","#4dd0e1"];
+    // 雙波段煙火爆炸 + 漫天彩帶
+    for (let w = 0; w < 3; w++) {
+        const cx = cvs.width * (0.25 + w * 0.25);
+        const cy = cvs.height * 0.35;
+        for (let i = 0; i < 38; i++) {
+            const ang = Math.random() * Math.PI * 2;
+            const spd = Math.random() * 8 + 2;
+            sparkList.push({
+                x: cx,
+                y: cy,
+                vx: Math.cos(ang) * spd,
+                vy: Math.sin(ang) * spd - 2,
+                r: Math.random() * 5 + 4,
+                c: colors[Math.floor(Math.random() * colors.length)],
+                alpha: 1.2
+            });
+        }
+    }
+    runSparkLoop();
+}
+
+function runSparkLoop() {
+    if (sparkAnimId) return;
+    const cvs = document.getElementById("confettiCanvas");
+    const ctx = cvs.getContext("2d");
+    function step() {
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        for (let i = sparkList.length - 1; i >= 0; i--) {
+            const p = sparkList[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.18; // 重力
+            p.alpha -= 0.018;
+            if (p.alpha <= 0) {
+                sparkList.splice(i, 1);
+                continue;
+            }
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, p.alpha);
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = p.c;
+            ctx.fillStyle = p.c;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+        if (sparkList.length > 0) {
+            sparkAnimId = requestAnimationFrame(step);
+        } else {
+            sparkAnimId = null;
+            cvs.style.display = "none";
+        }
+    }
+    sparkAnimId = requestAnimationFrame(step);
+}
+
+// ============================================================================
+// 家長倒數計時器核心邏輯 (時/分/秒 顯示 + 自動存檔關閉 + 密碼 5888 隱藏)
 // ============================================================================
 function initParentalTimer() {
     try {
         const savedTimer = window.localStorage.getItem(TIMER_KEY);
         if (savedTimer) {
             const p = JSON.parse(savedTimer);
-            if (typeof p.remainingSec === "number") {
-                timerState.remainingSec = p.remainingSec;
-            }
-            if (typeof p.active === "boolean") {
-                timerState.active = p.active;
-            }
+            if (typeof p.remainingSec === "number") timerState.remainingSec = p.remainingSec;
+            if (typeof p.active === "boolean") timerState.active = p.active;
         }
     } catch (e) {}
 
@@ -338,7 +535,7 @@ function updateTimerBadgeUI() {
     const badge = document.getElementById("timerBadge");
     if (!badge) return;
     if (!timerState.active) {
-        badge.innerText = "⏳ 計時器: 未啟用 (點擊設定)";
+        badge.innerText = "⏳ 計時器: 暫停中";
         badge.className = "timer-badge";
         return;
     }
@@ -359,6 +556,9 @@ function startTimerLoop() {
         if (timerState.remainingSec > 0) {
             timerState.remainingSec--;
             updateTimerBadgeUI();
+            if (timerState.remainingSec > 0 && timerState.remainingSec <= 10) {
+                playTone(880, "sine", 0.06, 0.08);
+            }
             if (timerState.remainingSec % 5 === 0) saveTimerState();
             if (timerState.remainingSec <= 0) {
                 triggerTimeUpLock(true);
@@ -374,23 +574,24 @@ function triggerTimeUpLock(autoDownload) {
     saveTimerState();
     saveProgress();
     updateTimerBadgeUI();
+    sfxError();
 
     if (autoDownload) {
         try { downloadJsonSave(); } catch (e) {}
     }
 
     document.getElementById("lockOverlay").style.display = "flex";
-    try {
-        window.close();
-    } catch (e) {}
+    try { window.close(); } catch (e) {}
 }
 
 function parentUnlockTime() {
     const pin = document.getElementById("unlockPinInput").value.trim();
     if (pin !== PARENT_PIN) {
-        alert("家長密碼錯誤！（預設密碼為 8888）");
+        sfxError();
+        alert("⚠️ 家長授權密碼錯誤！");
         return;
     }
+    sfxWin();
     document.getElementById("unlockPinInput").value = "";
     timerState.remainingSec = 1800;
     timerState.active = true;
@@ -401,6 +602,7 @@ function parentUnlockTime() {
 }
 
 function openTimerModal() {
+    sfxClick();
     const curS = Math.max(0, timerState.remainingSec);
     const h = Math.floor(curS / 3600);
     const m = Math.floor((curS % 3600) / 60);
@@ -424,7 +626,7 @@ function openTimerModal() {
             <button class="brush-btn" onclick="setQuickTime(0,0,10)">測試：10秒鐘</button>
         </div>
         <div style="margin-bottom:12px;">
-            <input type="password" id="parentPinSet" placeholder="輸入家長密碼(預設8888)" style="background:#090b10; color:#fff; border:1px solid #4dd0e1; border-radius:6px; padding:6px 10px; width:180px; text-align:center;">
+            <input type="password" id="parentPinSet" placeholder="請輸入家長授權密碼" style="background:#090b10; color:#fff; border:1px solid #4dd0e1; border-radius:6px; padding:7px 10px; width:190px; text-align:center;">
         </div>
         <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
             <button class="cmd-btn" style="background:#69f0ae; padding:8px 16px;" onclick="applyTimerSetting(true)">▶️ 啟動倒數計時</button>
@@ -435,6 +637,7 @@ function openTimerModal() {
 }
 
 function setQuickTime(h, m, s) {
+    sfxClick();
     document.getElementById("tHr").value = h;
     document.getElementById("tMin").value = m;
     document.getElementById("tSec").value = s;
@@ -443,7 +646,8 @@ function setQuickTime(h, m, s) {
 function applyTimerSetting(enableFlag) {
     const pin = document.getElementById("parentPinSet").value.trim();
     if (pin !== PARENT_PIN) {
-        alert("⚠️ 請輸入正確的家長密碼（預設為 8888）以變更計時設定！");
+        sfxError();
+        alert("⚠️ 家長授權密碼錯誤！無法變更計時器設定。");
         return;
     }
     const h = Math.max(0, parseInt(document.getElementById("tHr").value) || 0);
@@ -455,6 +659,7 @@ function applyTimerSetting(enableFlag) {
         alert("請設定至少 1 秒以上的倒數時間！");
         return;
     }
+    sfxWin();
     timerState.remainingSec = total;
     timerState.active = enableFlag;
     saveTimerState();
@@ -464,9 +669,14 @@ function applyTimerSetting(enableFlag) {
 }
 
 // ============================================================================
-// 跨瀏覽器繪圖與存檔核心
+// 跨瀏覽器霓虹繪圖與存檔核心
 // ============================================================================
-function drawRoundBox(ctx, x, y, w, h, r) {
+function drawRoundBox(ctx, x, y, w, h, r, glowCol) {
+    ctx.save();
+    if (glowCol) {
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = glowCol;
+    }
     ctx.beginPath();
     ctx.moveTo(x + r, y);
     ctx.lineTo(x + w - r, y);
@@ -480,6 +690,7 @@ function drawRoundBox(ctx, x, y, w, h, r) {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
+    ctx.restore();
 }
 
 function loadSaveData() {
@@ -508,13 +719,14 @@ function awardStars(g, l, s) {
         appState.stars[k] = Math.max(appState.stars[k] || 0, s);
         saveProgress();
     }
+    sfxWin();
     fireConfetti();
     const nextBtn = (l < 19)
         ? `<button class="cmd-btn" style="background:#69f0ae; padding:9px 18px; margin:6px;" onclick="closeModal(); loadLevel(${l+1});">⏩ 下一關 (第 ${l+2} 關)</button>`
         : `<button class="cmd-btn" style="background:#ff80ab; padding:9px 18px; margin:6px;" onclick="closeModal(); loadLevel(20);">🛠️ 自製創客關卡</button>`;
     showModal(`
-        <h2 style="color:#ffd54f; margin:0;">🎉 闖關成功！</h2>
-        <div style="font-size:2.3rem; margin:8px 0;">${"⭐".repeat(s)}</div>
+        <h2 style="color:#ffd54f; margin:0; text-shadow:0 0 12px #ffd54f;">🎉 闖關大成功！</h2>
+        <div style="font-size:2.6rem; margin:10px 0; text-shadow:0 0 18px #ffd54f;">${"⭐".repeat(s)}</div>
         <p style="color:#eceff4;">恭喜完成 <b>第 ${l+1} 關</b>！進度已自動儲存。</p>
         <div>
             <button class="cmd-btn" style="background:#64b5f6; padding:9px 14px; margin:6px;" onclick="closeModal();">🔄 留在本關</button>
@@ -539,6 +751,7 @@ function applyZoom(val) {
 }
 
 function openSaveModal() {
+    sfxClick();
     const code = btoa(encodeURIComponent(JSON.stringify({ stars: appState.stars, customLevels: appState.customLevels })));
     showModal(`
         <h3 style="color:#4dd0e1; margin-top:0;">💾 雲端與跨裝置存檔中心</h3>
@@ -570,8 +783,8 @@ function uploadJsonSave(e) {
             const d = JSON.parse(ev.target.result);
             if (d.stars) appState.stars = d.stars;
             if (d.customLevels) appState.customLevels = d.customLevels;
-            saveProgress(); loadLevel(appState.currentLevel); closeModal();
-        } catch (err) { alert("存檔格式錯誤！"); }
+            saveProgress(); loadLevel(appState.currentLevel); closeModal(); sfxWin();
+        } catch (err) { sfxError(); alert("存檔格式錯誤！"); }
     };
     r.readAsText(f);
 }
@@ -581,8 +794,8 @@ function importSaveCode() {
         const d = JSON.parse(decodeURIComponent(atob(document.getElementById("saveCodeBox").value.trim())));
         if (d.stars) appState.stars = d.stars;
         if (d.customLevels) appState.customLevels = d.customLevels;
-        saveProgress(); loadLevel(appState.currentLevel); closeModal();
-    } catch (e) { alert("通行碼無效！"); }
+        saveProgress(); loadLevel(appState.currentLevel); closeModal(); sfxWin();
+    } catch (e) { sfxError(); alert("通行碼無效！"); }
 }
 
 function resetAllSave() {
@@ -593,25 +806,7 @@ function resetAllSave() {
 }
 
 function showModal(html) { document.getElementById("modalContent").innerHTML = html; document.getElementById("modalOverlay").style.display = "flex"; }
-function closeModal() { document.getElementById("modalOverlay").style.display = "none"; }
-
-function fireConfetti() {
-    const cvs = document.getElementById("confettiCanvas");
-    cvs.style.display = "block"; cvs.width = window.innerWidth; cvs.height = window.innerHeight;
-    const ctx = cvs.getContext("2d");
-    const ps = Array.from({length: 65}, () => ({
-        x: Math.random() * cvs.width, y: -20,
-        vx: (Math.random() - 0.5) * 6, vy: Math.random() * 5 + 4,
-        c: ["#ffd54f","#69f0ae","#64b5f6","#ff80ab","#b388ff"][Math.floor(Math.random()*5)], s: Math.random() * 7 + 5
-    }));
-    let f = 0;
-    function step() {
-        ctx.clearRect(0, 0, cvs.width, cvs.height);
-        ps.forEach(p => { p.x += p.vx; p.y += p.vy; ctx.fillStyle = p.c; ctx.fillRect(p.x, p.y, p.s, p.s); });
-        if (++f < 70) requestAnimationFrame(step); else cvs.style.display = "none";
-    }
-    step();
-}
+function closeModal() { sfxClick(); document.getElementById("modalOverlay").style.display = "none"; }
 
 // ============================================================================
 // 5 款遊戲 × (20 關 + 1 自製關卡) 題庫
@@ -737,6 +932,7 @@ const G5_LEVELS = [
 ];
 
 function switchGame(gIdx) {
+    sfxClick();
     g1StopTimer(); appState.currentGame = gIdx;
     document.querySelectorAll("#gameTabs .nav-btn").forEach((b, i) => b.classList.toggle("active", i === gIdx));
     loadLevel(0);
@@ -748,7 +944,7 @@ function renderLevelBar() {
         const isC = (i === 20), isA = (i === appState.currentLevel);
         const st = appState.stars[appState.currentGame + "_" + i] || 0;
         const lbl = isC ? "🛠️ 自製關卡" : "第" + (i+1) + "關" + (st ? " " + "★".repeat(st) : "");
-        html += `<button class="lvl-btn ${isC?'custom':''} ${isA?'active':''}" onclick="loadLevel(${i})">${lbl}</button>`;
+        html += `<button class="lvl-btn ${isC?'custom':''} ${isA?'active':''}" onclick="sfxClick(); loadLevel(${i})">${lbl}</button>`;
     }
     document.getElementById("levelBar").innerHTML = html;
 }
@@ -820,13 +1016,15 @@ function initGame1(lIdx) {
 }
 
 function g1SetBrush(b, el) {
-    g1State.brush = b;
+    sfxClick(); g1State.brush = b;
     document.querySelectorAll("#g1BrushBar .brush-btn").forEach(x => x.classList.remove("active"));
     el.classList.add("active");
 }
 
 function g1CanvasClick(e) {
     if (appState.currentLevel !== 20 || g1State.timer) return;
+    sfxClick();
+    spawnSparks(e.clientX, e.clientY, "#4dd0e1");
     const r = e.target.getBoundingClientRect();
     const gx = Math.floor((e.clientX - r.left) * (420 / r.width) / 60);
     const gy = Math.floor((e.clientY - r.top) * (420 / r.height) / 60);
@@ -864,18 +1062,33 @@ function g1Draw() {
     for (let y = 0; y < 7; y++) {
         for (let x = 0; x < 7; x++) {
             const x1 = x * cs, y1 = y * cs, cell = g1State.grid[y][x];
-            ctx.fillStyle = (cell === 4 && g1State.laserOn) ? "#3b1222" : ((x+y)%2===0 ? "#141827" : "#0e111d");
+            ctx.fillStyle = (cell === 4 && g1State.laserOn) ? "#4a1228" : ((x+y)%2===0 ? "#141827" : "#0e111d");
             ctx.fillRect(x1, y1, cs, cs);
             ctx.strokeStyle = "#232942"; ctx.strokeRect(x1, y1, cs, cs);
             ctx.font = "25px 'Segoe UI Emoji', sans-serif";
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            if (icons[cell]) ctx.fillText(icons[cell], x1+30, y1+30);
-            else if (cell === 4 && g1State.laserOn) ctx.fillText("⚡", x1+30, y1+30);
+            if (icons[cell]) {
+                ctx.save();
+                if (cell === 2) { ctx.shadowBlur = 12; ctx.shadowColor = "#4dd0e1"; }
+                if (cell === 3) { ctx.shadowBlur = 15; ctx.shadowColor = "#69f0ae"; }
+                ctx.fillText(icons[cell], x1+30, y1+30);
+                ctx.restore();
+            } else if (cell === 4 && g1State.laserOn) {
+                ctx.save();
+                ctx.shadowBlur = 12; ctx.shadowColor = "#ff4081";
+                ctx.strokeStyle = "#ff4081"; ctx.lineWidth = 3;
+                ctx.beginPath(); ctx.moveTo(x1, y1+30); ctx.lineTo(x1+cs, y1+30); ctx.stroke();
+                ctx.fillText("⚡", x1+30, y1+30);
+                ctx.restore();
+            }
         }
     }
     const rx = g1State.rx * cs + 30, ry = g1State.ry * cs + 30;
+    ctx.save();
+    ctx.shadowBlur = 16; ctx.shadowColor = "#29b6f6";
     ctx.beginPath(); ctx.arc(rx, ry, 20, 0, Math.PI*2);
-    ctx.fillStyle = "#29b6f6"; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = "#fff"; ctx.stroke();
+    ctx.fillStyle = "#29b6f6"; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = "#fff"; ctx.stroke();
+    ctx.restore();
     ctx.font = "21px 'Segoe UI Emoji', sans-serif"; ctx.fillText("🤖", rx, ry);
     const dirs = [[0,-1],[1,0],[0,1],[-1,0]], arrs = ["▲","▶","▼","◀"];
     const dx = dirs[g1State.rdir][0], dy = dirs[g1State.rdir][1];
@@ -885,9 +1098,9 @@ function g1Draw() {
     ctx.fillText(arrs[g1State.rdir], rx+dx*21, ry+dy*21);
 }
 
-function g1Add(c) { if (!g1State.timer && g1State.cmds.length < 24) { g1State.cmds.push(c); g1RenderCmds(-1); } }
-function g1Pop() { if (!g1State.timer && g1State.cmds.length > 0) { g1State.cmds.pop(); g1RenderCmds(-1); } }
-function g1Clear() { if (!g1State.timer) { g1State.cmds = []; g1ResetBoard(); g1RenderCmds(-1); } }
+function g1Add(c) { if (!g1State.timer && g1State.cmds.length < 24) { sfxClick(); g1State.cmds.push(c); g1RenderCmds(-1); } }
+function g1Pop() { if (!g1State.timer && g1State.cmds.length > 0) { sfxClick(); g1State.cmds.pop(); g1RenderCmds(-1); } }
+function g1Clear() { if (!g1State.timer) { sfxClick(); g1State.cmds = []; g1ResetBoard(); g1RenderCmds(-1); } }
 
 function g1RenderCmds(actIdx) {
     const eff = g1State.cmds.filter(c => c !== "END_LOOP").length;
@@ -941,24 +1154,48 @@ function g1Run() {
                 const eff = g1State.cmds.filter(c => c !== "END_LOOP").length;
                 const opt = G1_LEVELS[appState.currentLevel].opt;
                 awardStars(0, appState.currentLevel, eff <= opt ? 3 : (eff <= opt+2 ? 2 : 1));
-            } else document.getElementById("g1Status").innerText = "🤔 還沒收集完水晶或還沒抵達終點喔！";
+            } else {
+                sfxError();
+                document.getElementById("g1Status").innerText = "🤔 還沒收集完水晶或還沒抵達終點喔！";
+            }
             return;
         }
         const item = q[idx]; g1RenderCmds(item.line);
         const dirs = [[0,-1],[1,0],[0,1],[-1,0]];
-        if (item.act === "LEFT") g1State.rdir = (g1State.rdir + 3) % 4;
-        else if (item.act === "RIGHT") g1State.rdir = (g1State.rdir + 1) % 4;
-        else if (item.act === "SWITCH") { if (g1State.grid[g1State.ry][g1State.rx] === 5) g1State.laserOn = !g1State.laserOn; }
+        const cvsRect = document.getElementById("g1Canvas").getBoundingClientRect();
+
+        if (item.act === "LEFT") { sfxTurn(); g1State.rdir = (g1State.rdir + 3) % 4; }
+        else if (item.act === "RIGHT") { sfxTurn(); g1State.rdir = (g1State.rdir + 1) % 4; }
+        else if (item.act === "SWITCH") {
+            if (g1State.grid[g1State.ry][g1State.rx] === 5) {
+                sfxLaser();
+                g1State.laserOn = !g1State.laserOn;
+                spawnSparks(cvsRect.left + g1State.rx * 60 + 30, cvsRect.top + g1State.ry * 60 + 30, "#ffd54f");
+            }
+        }
         else if (item.act === "MOVE") {
             const dx = dirs[g1State.rdir][0], dy = dirs[g1State.rdir][1], nx = g1State.rx + dx, ny = g1State.ry + dy;
             if (nx<0 || nx>=7 || ny<0 || ny>=7 || g1State.grid[ny][nx]===1 || (g1State.grid[ny][nx]===4 && g1State.laserOn)) {
-                g1State.timer = null; document.getElementById("g1Status").innerText = "💥 撞上隕石或雷射了！請修改積木。"; return;
+                g1State.timer = null;
+                sfxError();
+                document.getElementById("g1Status").innerText = "💥 撞上隕石或雷射了！請修改積木。";
+                return;
             }
+            sfxStep();
             g1State.rx = nx; g1State.ry = ny;
-            if (g1State.grid[ny][nx] === 2) { g1State.grid[ny][nx] = 0; g1State.gotC++; }
+            if (g1State.grid[ny][nx] === 2) {
+                g1State.grid[ny][nx] = 0; g1State.gotC++;
+                sfxCrystal();
+                spawnSparks(cvsRect.left + nx * 60 + 30, cvsRect.top + ny * 60 + 30, "#4dd0e1");
+            }
             else if (g1State.grid[ny][nx] === 6) {
+                sfxPortal();
                 outer: for (let py=0; py<7; py++) for (let px=0; px<7; px++) {
-                    if (g1State.grid[py][px] === 6 && (px !== nx || py !== ny)) { g1State.rx = px; g1State.ry = py; break outer; }
+                    if (g1State.grid[py][px] === 6 && (px !== nx || py !== ny)) {
+                        g1State.rx = px; g1State.ry = py;
+                        spawnSparks(cvsRect.left + px * 60 + 30, cvsRect.top + py * 60 + 30, "#b388ff");
+                        break outer;
+                    }
                 }
             }
         }
@@ -1009,12 +1246,15 @@ function g2EvalAndDraw() {
     const ys = (lvl.ins === 4) ? [70, 150, 235, 315] : [125, 255];
 
     function wire(x1, y1, x2, y2, v) {
+        ctx.save();
+        if (v) { ctx.shadowBlur = 10; ctx.shadowColor = "#69f0ae"; }
         ctx.strokeStyle = v ? "#69f0ae" : "#37474f"; ctx.lineWidth = v ? 5 : 3;
         const mx = (x1+x2)/2; ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(mx,y1); ctx.lineTo(mx,y2); ctx.lineTo(x2,y2); ctx.stroke();
+        ctx.restore();
     }
     function gate(x, y, w, h, t, v) {
         ctx.fillStyle = v ? "#1e88e5" : "#263238"; ctx.strokeStyle = v ? "#69f0ae" : "#90a4ae"; ctx.lineWidth = 2.5;
-        drawRoundBox(ctx, x, y, w, h, 10);
+        drawRoundBox(ctx, x, y, w, h, 10, v ? "#29b6f6" : null);
         ctx.fillStyle = "#fff"; ctx.font = "bold 14px 'Microsoft JhengHei'"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText(t + " 閘", x+w/2, y+h/2-9);
         ctx.fillStyle = v ? "#ffd54f" : "#b0bec5"; ctx.fillText("OUT=" + v, x+w/2, y+h/2+11);
@@ -1033,14 +1273,17 @@ function g2EvalAndDraw() {
     for (let i = 0; i < lvl.ins; i++) {
         const y = ys[i], v = g2State.inVals[i];
         ctx.fillStyle = v ? "#69f0ae" : "#263238"; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
-        drawRoundBox(ctx, 25, y-22, 120, 44, 9);
+        drawRoundBox(ctx, 25, y-22, 120, 44, 9, v ? "#69f0ae" : null);
         ctx.fillStyle = v ? "#111" : "#fff"; ctx.font = "bold 14px 'Microsoft JhengHei'";
         ctx.fillText("開關 " + ["A","B","C","D"][i] + " = " + v, 85, y);
     }
 
+    ctx.save();
+    if (finalOut) { ctx.shadowBlur = 22; ctx.shadowColor = "#ffd54f"; }
     ctx.beginPath(); ctx.arc(635, 190, 42, 0, Math.PI*2);
     ctx.fillStyle = finalOut ? "#ffd54f" : "#263238"; ctx.fill();
     ctx.lineWidth = 4; ctx.strokeStyle = finalOut ? "#69f0ae" : "#546e7a"; ctx.stroke();
+    ctx.restore();
     ctx.fillStyle = finalOut ? "#111" : "#eceff4";
     ctx.fillText("🎯核心", 635, 180); ctx.fillText("OUT=" + finalOut, 635, 202);
 
@@ -1064,7 +1307,10 @@ function g2CanvasClick(e) {
     const ys = (lvl.ins === 4) ? [70, 150, 235, 315] : [125, 255];
     for (let i = 0; i < lvl.ins; i++) {
         if (x >= 25 && x <= 145 && y >= ys[i]-22 && y <= ys[i]+22) {
-            g2State.inVals[i] = 1 - g2State.inVals[i]; g2State.clicks++; g2EvalAndDraw(); return;
+            g2State.inVals[i] = 1 - g2State.inVals[i]; g2State.clicks++;
+            sfxClick();
+            spawnSparks(e.clientX, e.clientY, g2State.inVals[i] ? "#69f0ae" : "#64b5f6");
+            g2EvalAndDraw(); return;
         }
     }
     if (appState.currentLevel === 20) {
@@ -1072,20 +1318,21 @@ function g2CanvasClick(e) {
         if (x>=245 && x<=360 && y>=70 && y<=145) lvl.g1 = ts[(ts.indexOf(lvl.g1)+1)%5];
         else if (x>=245 && x<=360 && y>=235 && y<=310) lvl.g2 = ts[(ts.indexOf(lvl.g2)+1)%5];
         else if (x>=435 && x<=550 && y>=152 && y<=227) lvl.g3 = ts[(ts.indexOf(lvl.g3)+1)%5];
+        sfxLaser();
         appState.customLevels.g2 = JSON.parse(JSON.stringify(lvl)); saveProgress(); g2EvalAndDraw();
     }
 }
 
 function g2CheckWin() {
     const lvl = G2_LEVELS[appState.currentLevel];
-    if (g2State.finalOut !== 1) return alert("⚠️ 右側的能量核心目前還是 0（未啟動）喔！");
+    if (g2State.finalOut !== 1) { sfxError(); return alert("⚠️ 右側的能量核心目前還是 0（未啟動）喔！"); }
     const cnt = g2State.inVals.slice(0, lvl.ins).reduce((a,b)=>a+b, 0);
-    if (lvl.rule === "EXACT_1" && cnt !== 1) return alert("限制：必須剛好開啟 1 個開關（目前 " + cnt + " 個）！");
-    if (lvl.rule === "EXACT_2" && cnt !== 2) return alert("限制：必須剛好開啟 2 個開關（目前 " + cnt + " 個）！");
-    if (lvl.rule === "EXACT_3" && cnt !== 3) return alert("限制：必須剛好開啟 3 個開關（目前 " + cnt + " 個）！");
-    if (lvl.rule === "AT_LEAST_1" && cnt < 1) return alert("限制：至少開啟 1 個開關！");
-    if (lvl.rule === "MAX_3" && cnt > 3) return alert("限制：最多開啟 3 個開關！");
-    if (appState.currentLevel === 14 && g2State.inVals[0] !== 1) return alert("限制：開關 A 必須開啟！");
+    if (lvl.rule === "EXACT_1" && cnt !== 1) { sfxError(); return alert("限制：必須剛好開啟 1 個開關（目前 " + cnt + " 個）！"); }
+    if (lvl.rule === "EXACT_2" && cnt !== 2) { sfxError(); return alert("限制：必須剛好開啟 2 個開關（目前 " + cnt + " 個）！"); }
+    if (lvl.rule === "EXACT_3" && cnt !== 3) { sfxError(); return alert("限制：必須剛好開啟 3 個開關（目前 " + cnt + " 個）！"); }
+    if (lvl.rule === "AT_LEAST_1" && cnt < 1) { sfxError(); return alert("限制：至少開啟 1 個開關！"); }
+    if (lvl.rule === "MAX_3" && cnt > 3) { sfxError(); return alert("限制：最多開啟 3 個開關！"); }
+    if (appState.currentLevel === 14 && g2State.inVals[0] !== 1) { sfxError(); return alert("限制：開關 A 必須開啟！"); }
     awardStars(1, appState.currentLevel, g2State.clicks <= 4 ? 3 : (g2State.clicks <= 7 ? 2 : 1));
 }
 
@@ -1109,7 +1356,7 @@ function initGame3(lIdx) {
         <canvas id="g3Canvas" width="700" height="340"></canvas>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
             <div class="status-bar" id="g3Status" style="margin:0;">已交換：0 次 （點擊兩瓶能量管交換位置）</div>
-            <button class="cmd-btn" style="background:#ffb74d; padding:7px 14px;" onclick="initGame3(${lIdx})">🔄 重置</button>
+            <button class="cmd-btn" style="background:#ffb74d; padding:7px 14px;" onclick="sfxClick(); initGame3(${lIdx})">🔄 重置</button>
         </div>
         ${customHtml}
     </div>`;
@@ -1118,10 +1365,11 @@ function initGame3(lIdx) {
 }
 
 function g3ApplyCustom() {
+    sfxClick();
     const raw = document.getElementById("g3CustomIn").value.trim().split(" ").filter(x => x !== "").map(Number).filter(n => n>=5 && n<=99).slice(0,8);
     if (raw.length >= 3) { G3_LEVELS[20].arr = raw; appState.customLevels.g3 = JSON.parse(JSON.stringify(G3_LEVELS[20])); saveProgress(); initGame3(20); }
 }
-function g3ToggleAdj() { G3_LEVELS[20].adj = !G3_LEVELS[20].adj; appState.customLevels.g3 = JSON.parse(JSON.stringify(G3_LEVELS[20])); saveProgress(); initGame3(20); }
+function g3ToggleAdj() { sfxClick(); G3_LEVELS[20].adj = !G3_LEVELS[20].adj; appState.customLevels.g3 = JSON.parse(JSON.stringify(G3_LEVELS[20])); saveProgress(); initGame3(20); }
 
 function g3GetTarget() {
     const lvl = G3_LEVELS[appState.currentLevel], b = [...lvl.arr];
@@ -1148,7 +1396,7 @@ function g3Draw(code) {
         const isSel = (g3State.sel === i), isOk = (v === target[i]);
         ctx.fillStyle = isSel ? "#ffd54f" : (isOk ? "#00e676" : "#29b6f6");
         ctx.strokeStyle = isSel ? "#fff" : "#90caf9"; ctx.lineWidth = isSel ? 3 : 1.5;
-        drawRoundBox(ctx, x1, y1, bw, bh, 8);
+        drawRoundBox(ctx, x1, y1, bw, bh, 8, isSel ? "#ffd54f" : (isOk ? "#00e676" : null));
         ctx.fillStyle = "#fff"; ctx.font = "bold 15px Consolas"; ctx.fillText(String(v), x1+bw/2, y1-12);
         ctx.fillStyle = "#4dd0e1"; ctx.font = "bold 12px sans-serif"; ctx.fillText("[" + i + "]", x1+bw/2, y2+20);
     });
@@ -1166,13 +1414,15 @@ function g3CanvasClick(e) {
     const r = e.target.getBoundingClientRect(), x = (e.clientX - r.left) * (700 / r.width);
     const n = g3State.arr.length, w = Math.floor(620 / n), sx = 40 + Math.floor((620 - w*n)/2);
     const idx = Math.floor((x - sx) / w); if (idx < 0 || idx >= n) return;
-    if (g3State.sel === null) { g3State.sel = idx; g3Draw("# 選取 potions[" + idx + "]"); }
-    else if (g3State.sel === idx) { g3State.sel = null; g3Draw("# 取消選取"); }
+    if (g3State.sel === null) { sfxClick(); g3State.sel = idx; g3Draw("# 選取 potions[" + idx + "]"); }
+    else if (g3State.sel === idx) { sfxClick(); g3State.sel = null; g3Draw("# 取消選取"); }
     else {
         const i = g3State.sel, j = idx, lvl = G3_LEVELS[appState.currentLevel];
-        if (lvl.adj && Math.abs(i - j) !== 1) { alert("⚠️ 本關限制只能交換相鄰的兩瓶喔！"); g3State.sel = null; g3Draw("# 違反相鄰限制"); return; }
+        if (lvl.adj && Math.abs(i - j) !== 1) { sfxError(); alert("⚠️ 本關限制只能交換相鄰的兩瓶喔！"); g3State.sel = null; g3Draw("# 違反相鄰限制"); return; }
         const tmp = g3State.arr[i]; g3State.arr[i] = g3State.arr[j]; g3State.arr[j] = tmp;
         g3State.swaps++; g3State.sel = null;
+        sfxSwap();
+        spawnSparks(e.clientX, e.clientY, "#ffd54f");
         document.getElementById("g3Status").innerText = "已交換：" + g3State.swaps + " 次";
         g3Draw("potions[" + i + "], potions[" + j + "] = potions[" + j + "], potions[" + i + "]");
         const t = g3GetTarget();
@@ -1206,7 +1456,7 @@ function initGame4(lIdx) {
         <canvas id="g4Canvas" width="700" height="340"></canvas>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
             <div class="status-bar" id="g4Status" style="margin:0;">步數：0 步 （點擊來源柱取出頂端環，再點目標柱放入）</div>
-            <button class="cmd-btn" style="background:#ffb74d; padding:7px 14px;" onclick="initGame4(${lIdx})">🔄 重置</button>
+            <button class="cmd-btn" style="background:#ffb74d; padding:7px 14px;" onclick="sfxClick(); initGame4(${lIdx})">🔄 重置</button>
         </div>
         ${customHtml}
     </div>`;
@@ -1215,6 +1465,7 @@ function initGame4(lIdx) {
 }
 
 function g4Custom(nD, tType) {
+    sfxClick();
     const lvl = G4_LEVELS[20];
     let curN = nD || 3, pC = lvl.pegs.length;
     if (!nD) { curN = 0; lvl.pegs.forEach(p => curN += p.length); }
@@ -1240,8 +1491,9 @@ function g4Draw(code) {
 
         st.forEach((d, sPos) => {
             const w = 20 + d * 14, y2 = 288 - sPos * 30 - (isSel && sPos === st.length-1 ? 18 : 0);
-            ctx.fillStyle = cols[(d-1)%cols.length]; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
-            drawRoundBox(ctx, cx-w, y2-26, w*2, 26, 7);
+            const cHex = cols[(d-1)%cols.length];
+            ctx.fillStyle = cHex; ctx.strokeStyle = "#fff"; ctx.lineWidth = 2;
+            drawRoundBox(ctx, cx-w, y2-26, w*2, 26, 7, (isSel && sPos === st.length-1) ? cHex : null);
             ctx.fillStyle = "#111"; ctx.font = "bold 12px sans-serif"; ctx.fillText("環 " + d, cx, y2-13);
         });
     });
@@ -1255,14 +1507,16 @@ function g4CanvasClick(e) {
     const r = e.target.getBoundingClientRect(), x = (e.clientX - r.left) * (700 / r.width);
     const numP = g4State.pegs.length, idx = Math.floor(x / (700 / numP));
     if (idx < 0 || idx >= numP) return;
-    if (g4State.sel === null) { if (g4State.pegs[idx].length) { g4State.sel = idx; g4Draw("# 選取柱 " + idx); } }
-    else if (g4State.sel === idx) { g4State.sel = null; g4Draw("# 取消選取"); }
+    if (g4State.sel === null) { if (g4State.pegs[idx].length) { sfxClick(); g4State.sel = idx; g4Draw("# 選取柱 " + idx); } }
+    else if (g4State.sel === idx) { sfxClick(); g4State.sel = null; g4Draw("# 取消選取"); }
     else {
         const src = g4State.sel, dst = idx, lvl = G4_LEVELS[appState.currentLevel];
-        if (lvl.adj && Math.abs(src - dst) !== 1) { alert("⚠️ 本關限制只能移到隔壁相鄰的柱子喔！"); g4State.sel = null; g4Draw("# 違反相鄰限制"); return; }
+        if (lvl.adj && Math.abs(src - dst) !== 1) { sfxError(); alert("⚠️ 本關限制只能移到隔壁相鄰的柱子喔！"); g4State.sel = null; g4Draw("# 違反相鄰限制"); return; }
         const disk = g4State.pegs[src][g4State.pegs[src].length-1], top = g4State.pegs[dst][g4State.pegs[dst].length-1];
-        if (top !== undefined && top < disk) { alert("⚠️ 大環不能壓在小環上面喔！"); g4State.sel = null; g4Draw("# 違反大小規則"); return; }
+        if (top !== undefined && top < disk) { sfxError(); alert("⚠️ 大環不能壓在小環上面喔！"); g4State.sel = null; g4Draw("# 違反大小規則"); return; }
         g4State.pegs[src].pop(); g4State.pegs[dst].push(disk); g4State.moves++; g4State.sel = null;
+        sfxSwap();
+        spawnSparks(e.clientX, e.clientY, "#69f0ae");
         document.getElementById("g4Status").innerText = "步數：" + g4State.moves + " 步";
         const pL = ["A","B","C","D"]; g4Draw("d = stack_" + pL[src] + ".pop()" + NL + "stack_" + pL[dst] + ".append(d)");
         if (g4State.pegs[lvl.target].length === g4State.totalDisks) awardStars(3, appState.currentLevel, g4State.moves <= lvl.opt ? 3 : (g4State.moves <= lvl.opt+4 ? 2 : 1));
@@ -1286,7 +1540,7 @@ function initGame5(lIdx) {
         <canvas id="g5Canvas" width="700" height="375"></canvas>
         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
             <div class="status-bar" style="margin:0;">💡 密碼完全吻合時會變成綠色 ✅！</div>
-            <div style="display:flex; gap:6px;">${customBtn}<button class="cmd-btn" style="background:#ffb74d; padding:7px 14px;" onclick="initGame5(${lIdx})">🗑️ 清空</button></div>
+            <div style="display:flex; gap:6px;">${customBtn}<button class="cmd-btn" style="background:#ffb74d; padding:7px 14px;" onclick="sfxClick(); initGame5(${lIdx})">🗑️ 清空</button></div>
         </div>
     </div>`;
     document.getElementById("g5Canvas").addEventListener("click", g5CanvasClick);
@@ -1294,6 +1548,7 @@ function initGame5(lIdx) {
 }
 
 function g5ToggleCreator() {
+    sfxClick();
     g5State.editTarget = !g5State.editTarget;
     const b = document.getElementById("g5CreatorBtn");
     if (g5State.editTarget) { b.innerText = "🔒 鎖定並開始解謎"; b.style.background = "#69f0ae"; }
@@ -1339,9 +1594,10 @@ function g5Draw() {
         ctx.textAlign = "center";
         for (let c = 0; c < 6; c++) {
             const x1 = ox + c*cs, y1 = oy + r*cs, v = board[r][c];
-            ctx.fillStyle = v ? (g5State.editTarget ? "#ff80ab" : "#29b6f6") : "#161925";
-            ctx.strokeStyle = "#37474f"; ctx.lineWidth = 2;
-            drawRoundBox(ctx, x1+2, y1+2, cs-4, cs-4, 6);
+            const fillCol = v ? (g5State.editTarget ? "#ff80ab" : "#29b6f6") : "#161925";
+            ctx.fillStyle = fillCol;
+            ctx.strokeStyle = v ? "#fff" : "#37474f"; ctx.lineWidth = 2;
+            drawRoundBox(ctx, x1+2, y1+2, cs-4, cs-4, 6, v ? fillCol : null);
             ctx.fillStyle = v ? "#111" : "#546e7a"; ctx.font = "bold 15px Consolas"; ctx.fillText(String(v), x1+cs/2, y1+cs/2);
         }
     }
@@ -1358,9 +1614,15 @@ function g5CanvasClick(e) {
     const x = (e.clientX - rect.left) * (700 / rect.width), y = (e.clientY - rect.top) * (375 / rect.height);
     const c = Math.floor((x - 160) / 48), r = Math.floor((y - 72) / 48);
     if (r < 0 || r >= 6 || c < 0 || c >= 6) return;
-    if (g5State.editTarget) { g5State.target[r][c] = 1 - g5State.target[r][c]; g5Draw(); return; }
+    if (g5State.editTarget) { sfxClick(); g5State.target[r][c] = 1 - g5State.target[r][c]; g5Draw(); return; }
     g5State.player[r][c] = 1 - g5State.player[r][c];
-    if (g5State.player[r][c] === 1 && g5State.target[r][c] === 0) g5State.mistakes++;
+    if (g5State.player[r][c] === 1 && g5State.target[r][c] === 0) {
+        g5State.mistakes++;
+        sfxError();
+    } else {
+        sfxClick();
+        spawnSparks(e.clientX, e.clientY, g5State.player[r][c] ? "#29b6f6" : "#b0bec5");
+    }
     g5Draw();
     if (g5State.player.every((row, ri) => row.every((v, ci) => v === g5State.target[ri][ci]))) {
         awardStars(4, appState.currentLevel, g5State.mistakes <= 2 ? 3 : (g5State.mistakes <= 6 ? 2 : 1));
