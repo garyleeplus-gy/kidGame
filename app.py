@@ -30,7 +30,7 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    .block-container { padding: 0.4rem 0.5rem 0rem 0.5rem !important; max-width: 100% !important; }
+    .block-container { padding: 0.3rem 0.5rem 0rem 0.5rem !important; max-width: 100% !important; }
     header { visibility: hidden; }
     footer { visibility: hidden; }
 </style>
@@ -40,7 +40,7 @@ with st.sidebar:
     st.markdown("### 🌌 星際邏輯學院 Web 2.0")
     st.markdown("""
     - **5 大運算思維遊戲 × 各 20 關 + 自製沙盒 (共 105 關)**
-    - 🎯 **局部直觀動作回饋**：解題每一步皆在格內/物件旁顯示清晰局部軌跡與指示，過關才觸發全螢幕煙火。
+    - 🖥️ **居中大視窗版面**：中央放大遊戲舞台、緊湊型指令按鈕、底部橫向演算法透視窗。
     - ⏳ **家長計時器**：頂部顯示「小時/分鐘/秒」倒數，時間到自動存檔並鎖定畫面（需家長授權密碼解鎖）。
     - 📱 **手機/平板適應**：可使用頂部「🔍縮放」滑桿調整大小，支援雙指縮放。
     - 💾 **跨裝置存檔**：點擊右上角「存檔」可下載 `.json` 存檔或複製通行碼。
@@ -66,27 +66,28 @@ GAME_HTML = r'''<!DOCTYPE html>
     }
     * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
     body {
-        margin: 0; padding: 6px;
-        background: radial-gradient(circle at 20% 20%, #1a1f35 0%, #0b0d14 100%);
+        margin: 0; padding: 6px 10px;
+        background: radial-gradient(circle at 50% 15%, #1a1f35 0%, #0b0d14 100%);
         color: var(--text);
         font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
         overflow-x: hidden;
     }
+    /* 頂部導覽列 */
     .top-header {
         display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
         background: var(--bg-panel); border: 1px solid rgba(100,181,246,0.35);
-        border-radius: 14px; padding: 8px 12px; margin-bottom: 8px; gap: 8px;
+        border-radius: 12px; padding: 6px 12px; margin-bottom: 6px; gap: 8px;
     }
     .brand {
-        font-size: 1.15rem; font-weight: 900;
+        font-size: 1.12rem; font-weight: 900;
         background: linear-gradient(90deg, #ffd54f, #4dd0e1, #ff80ab);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
     .nav-tabs { display: flex; flex-wrap: wrap; gap: 5px; }
     .nav-btn {
         background: var(--bg-card); color: var(--text);
-        border: 1px solid rgba(255,255,255,0.12); border-radius: 9px;
-        padding: 6px 10px; font-size: 0.84rem; font-weight: bold; cursor: pointer;
+        border: 1px solid rgba(255,255,255,0.12); border-radius: 8px;
+        padding: 5px 10px; font-size: 0.83rem; font-weight: bold; cursor: pointer;
         transition: all 0.15s;
     }
     .nav-btn:hover { border-color: var(--cyan); }
@@ -98,7 +99,7 @@ GAME_HTML = r'''<!DOCTYPE html>
     .timer-badge {
         background: rgba(77, 208, 225, 0.15); border: 1px solid var(--cyan);
         color: var(--cyan); padding: 4px 10px; border-radius: 20px;
-        font-weight: bold; font-size: 0.85rem; cursor: pointer;
+        font-weight: bold; font-size: 0.83rem; cursor: pointer;
         font-family: Consolas, "Microsoft JhengHei", monospace;
     }
     .timer-badge.warn {
@@ -109,80 +110,117 @@ GAME_HTML = r'''<!DOCTYPE html>
     }
     .star-badge {
         background: rgba(105,240,174,0.15); border: 1px solid var(--green);
-        color: var(--green); padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.85rem;
+        color: var(--green); padding: 4px 10px; border-radius: 20px; font-weight: bold; font-size: 0.83rem;
     }
     .tool-btn {
         background: #37474f; color: #fff; border: 1px solid var(--cyan);
-        padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 0.82rem; font-weight: bold;
+        padding: 4px 9px; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: bold;
     }
     .tool-btn:hover { background: var(--cyan); color: #111; }
+
+    /* 關卡選擇列 */
     .level-bar {
         display: flex; align-items: center; gap: 5px; overflow-x: auto;
-        background: var(--bg-panel); padding: 7px 10px; border-radius: 11px;
+        background: var(--bg-panel); padding: 6px 10px; border-radius: 10px;
         border: 1px solid rgba(255,255,255,0.08); margin-bottom: 8px;
     }
     .lvl-btn {
         flex: 0 0 auto; background: var(--bg-card); color: var(--sub);
         border: 1px solid rgba(255,255,255,0.1); border-radius: 7px;
-        padding: 5px 9px; font-size: 0.8rem; font-weight: bold; cursor: pointer;
+        padding: 4px 9px; font-size: 0.79rem; font-weight: bold; cursor: pointer;
     }
     .lvl-btn.active { background: var(--blue); color: #000; border-color: #fff; }
     .lvl-btn.custom { background: linear-gradient(135deg, #ff80ab, #f50057); color: #fff; }
-    .main-grid {
-        display: grid; grid-template-columns: 1fr 340px; gap: 10px;
+
+    /* 主版面：上下垂直堆疊（上方居中大舞台 + 下方紅框處全寬 Python 演算法透視窗） */
+    .main-layout {
+        display: flex; flex-direction: column; gap: 10px;
         transform-origin: top center; transition: transform 0.15s ease;
     }
-    @media (max-width: 920px) { .main-grid { grid-template-columns: 1fr; } }
-    .card {
+    .stage-card {
         background: var(--bg-panel); border-radius: 14px;
-        border: 1px solid rgba(100,181,246,0.22); padding: 12px;
+        border: 1px solid rgba(100,181,246,0.25); padding: 12px 16px;
         box-shadow: 0 6px 24px rgba(0,0,0,0.45);
     }
-    .lvl-title { font-size: 1.15rem; font-weight: bold; color: var(--gold); margin-bottom: 4px; }
-    .lvl-desc { font-size: 0.9rem; color: var(--sub); margin-bottom: 10px; line-height: 1.4; }
-    .game-flex { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; justify-content: center; }
+    .stage-header {
+        text-align: center; margin-bottom: 10px;
+    }
+    .lvl-title { font-size: 1.18rem; font-weight: bold; color: var(--gold); margin-bottom: 3px; }
+    .lvl-desc { font-size: 0.9rem; color: var(--sub); line-height: 1.35; }
+
+    /* 遊戲舞台內部居中配置：大動作視窗在中間 + 緊湊小巧的動作按鈕在旁 */
+    .game-flex {
+        display: flex; flex-wrap: wrap; gap: 22px;
+        align-items: center; justify-content: center;
+    }
     canvas {
-        background: #0b0e17; border-radius: 12px; border: 2px solid rgba(100,181,246,0.4);
+        background: #0b0e17; border-radius: 12px; border: 2px solid rgba(100,181,246,0.45);
         max-width: 100%; height: auto; touch-action: manipulation;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.55);
     }
+    /* 大型畫布尺寸強化 (讓第 2~5 關的動作視窗在中間更大更清楚) */
+    .wide-canvas {
+        width: 800px; max-width: 100%; height: auto;
+    }
+    /* 緊湊型小巧控制面板 (固定 290px 寬，不再被拉長成巨型橫條) */
     .ctrl-box {
-        flex: 1 1 240px; background: rgba(15,17,26,0.8);
-        border-radius: 11px; padding: 10px; border: 1px solid rgba(255,255,255,0.08);
+        flex: 0 0 290px; width: 290px; max-width: 100%;
+        background: rgba(15,17,26,0.88);
+        border-radius: 12px; padding: 10px; border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 4px 14px rgba(0,0,0,0.4);
     }
-    .block-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+    .block-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 7px;
+    }
     .cmd-btn {
-        border: none; border-radius: 8px; padding: 8px 6px;
-        font-size: 0.88rem; font-weight: bold; cursor: pointer; color: #111;
+        border: none; border-radius: 7px; padding: 6px 8px;
+        font-size: 0.82rem; font-weight: bold; cursor: pointer; color: #111;
         transition: transform 0.08s, filter 0.15s;
     }
     .cmd-btn:hover { filter: brightness(1.1); }
     .cmd-btn:active { transform: scale(0.95); }
     .cmd-list {
         background: #090b10; border-radius: 8px; padding: 6px;
-        height: 185px; overflow-y: auto; font-family: Consolas, monospace;
-        font-size: 0.86rem; border: 1px solid #2c3146; margin-top: 5px;
+        height: 210px; overflow-y: auto; font-family: Consolas, monospace;
+        font-size: 0.83rem; border: 1px solid #2c3146; margin-top: 5px;
+        text-align: left;
     }
     .cmd-item { padding: 3px 5px; border-radius: 4px; }
     .cmd-item.running { background: rgba(255,213,79,0.28); border-left: 4px solid var(--gold); color: #fff; font-weight: bold; }
+
     .status-bar {
-        margin-top: 8px; padding: 7px 10px; border-radius: 8px;
+        margin-top: 8px; padding: 7px 12px; border-radius: 8px;
         background: rgba(105,240,174,0.12); border-left: 4px solid var(--green);
         font-weight: bold; font-size: 0.88rem; color: var(--green);
-        transition: all 0.2s;
+        transition: all 0.2s; text-align: left;
     }
     .status-bar.err {
         background: rgba(255, 128, 171, 0.15); border-left-color: var(--pink); color: var(--pink);
     }
+
+    /* 底部紅框區域：全寬橫向「🐍 即時 Python 演算法透視窗」 */
+    .bottom-algo-dock {
+        background: var(--bg-panel); border-radius: 14px;
+        border: 1px solid rgba(105, 240, 174, 0.3); padding: 10px 16px;
+        box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+        display: grid; grid-template-columns: 1.6fr 1fr; gap: 14px; align-items: stretch;
+    }
+    @media (max-width: 860px) {
+        .bottom-algo-dock { grid-template-columns: 1fr; }
+    }
     .code-box {
         background: #090b10; color: #69f0ae; font-family: Consolas, monospace;
-        font-size: 0.86rem; padding: 10px; border-radius: 9px;
-        height: 290px; overflow-y: auto; white-space: pre-wrap; border: 1px solid #2e354d;
+        font-size: 0.86rem; padding: 10px 12px; border-radius: 9px;
+        height: 135px; overflow-y: auto; white-space: pre-wrap; border: 1px solid #2e354d;
+        line-height: 1.4;
     }
     .concept-box {
-        margin-top: 8px; background: rgba(255,213,79,0.1);
-        border: 1px solid rgba(255,213,79,0.4); border-radius: 9px;
-        padding: 9px; font-size: 0.85rem; color: var(--gold); line-height: 1.4;
+        background: rgba(255,213,79,0.08);
+        border: 1px solid rgba(255,213,79,0.35); border-radius: 9px;
+        padding: 10px 12px; font-size: 0.86rem; color: var(--gold); line-height: 1.45;
+        display: flex; align-items: center;
     }
+
     .modal-overlay {
         display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.82); z-index: 999; align-items: center; justify-content: center; padding: 14px;
@@ -200,11 +238,11 @@ GAME_HTML = r'''<!DOCTYPE html>
     }
     .brush-bar {
         display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px;
-        background: rgba(255,255,255,0.06); padding: 7px; border-radius: 9px; justify-content: center;
+        background: rgba(255,255,255,0.06); padding: 6px 10px; border-radius: 9px; justify-content: center;
     }
     .brush-btn {
         background: #2c3146; color: #fff; border: 1px solid transparent;
-        padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.8rem;
+        padding: 4px 8px; border-radius: 6px; cursor: pointer; font-size: 0.78rem;
     }
     .brush-btn.active { border-color: var(--gold); background: #3f4765; }
     .time-input {
@@ -240,16 +278,27 @@ GAME_HTML = r'''<!DOCTYPE html>
 
 <div class="level-bar" id="levelBar"></div>
 
-<div class="main-grid" id="mainGrid">
-    <div class="card" id="mainStageCard">
-        <div class="lvl-title" id="lvlTitle">載入關卡中...</div>
-        <div class="lvl-desc" id="lvlDesc"></div>
+<!-- 主工作區：上方為居中大動作舞台，下方紅框位置為橫向 Python 演算法透視窗 -->
+<div class="main-layout" id="mainGrid">
+    <div class="stage-card" id="mainStageCard">
+        <div class="stage-header">
+            <div class="lvl-title" id="lvlTitle">載入關卡中...</div>
+            <div class="lvl-desc" id="lvlDesc"></div>
+        </div>
         <div id="stageContent"></div>
     </div>
-    <div class="card">
-        <div style="font-size:1rem; font-weight:bold; color:#69f0ae; margin-bottom:5px;">🐍 即時 Python 演算法透視窗</div>
-        <div class="code-box" id="pythonPreview"></div>
-        <div class="concept-box" id="conceptBox"></div>
+
+    <!-- 底部紅框位置：即時 Python 演算法透視窗 -->
+    <div class="bottom-algo-dock">
+        <div>
+            <div style="font-size:0.95rem; font-weight:bold; color:#69f0ae; margin-bottom:5px;">
+                🐍 即時 Python 演算法透視窗 <span style="font-size:0.78rem; color:#b0bec5; font-weight:normal;">（你的每一步操作都會即時轉譯成真正的 Python 程式碼）</span>
+            </div>
+            <div class="code-box" id="pythonPreview"></div>
+        </div>
+        <div style="display:flex; flex-direction:column; justify-content:center;">
+            <div class="concept-box" id="conceptBox"></div>
+        </div>
     </div>
 </div>
 
@@ -292,7 +341,7 @@ let appState = { currentGame: 0, currentLevel: 0, stars: {}, customLevels: {} };
 let timerState = { remainingSec: 1800, active: true, intervalId: null };
 
 // ============================================================================
-// Web Audio API 太空音效合成器 (精準回饋每一步動作)
+// Web Audio API 太空音效合成器
 // ============================================================================
 let audioCtx = null;
 let soundEnabled = true;
@@ -623,7 +672,6 @@ function awardStars(g, l, s) {
         appState.stars[k] = Math.max(appState.stars[k] || 0, s);
         saveProgress();
     }
-    // 只有過關時才觸發勝利交響樂與全螢幕慶祝煙火
     sfxWin();
     fireConfetti();
     const nextBtn = (l < 19)
@@ -866,12 +914,14 @@ function loadLevel(lIdx) {
 
 function updatePythonBox(code, tip) {
     document.getElementById("pythonPreview").innerText = code;
-    document.getElementById("conceptBox").innerHTML = "💡 <b>運算思維小百科：</b><br>" + tip;
+    document.getElementById("conceptBox").innerHTML = "<div>💡 <b>運算思維小百科：</b><br>" + tip + "</div>";
 }
 
 // ============================================================================
-// 遊戲 1：🚀 星際編碼號 (含步進軌跡線 + 單格局部微回饋)
+// 遊戲 1：🚀 星際編碼號 (504x504 居中大動作視窗 + 290px 小巧緊湊動作按鈕面板)
 // ============================================================================
+const G1_CS = 72;
+const G1_CANVAS_SIZE = 504; // 7 * 72 = 504 大尺寸地圖畫布
 let g1State = {
     cmds: [], grid: [], rx:1, ry:5, rdir:0, laserOn:true, gotC:0, totalC:0,
     timer:null, brush:1, trace:[], localFx:null
@@ -896,12 +946,13 @@ function initGame1(lIdx) {
     </div>` : "";
 
     document.getElementById("stageContent").innerHTML = `<div class="game-flex">
-        <div>
-            <canvas id="g1Canvas" width="420" height="420"></canvas>
-            <div class="status-bar" id="g1Status">🤖 機器人就緒！請在右側點擊積木編排程式。</div>
+        <div style="text-align:center;">
+            <canvas id="g1Canvas" width="${G1_CANVAS_SIZE}" height="${G1_CANVAS_SIZE}"></canvas>
+            <div class="status-bar" id="g1Status" style="max-width:${G1_CANVAS_SIZE}px;">🤖 機器人就緒！請在右側點擊積木編排程式。</div>
             ${customHtml}
         </div>
         <div class="ctrl-box">
+            <div style="font-size:0.84rem; font-weight:bold; color:#4dd0e1; margin-bottom:6px; text-align:left;">🧩 動作積木面板：</div>
             <div class="block-grid">
                 <button class="cmd-btn" style="background:#64b5f6;" onclick="g1Add('MOVE')">⬆️ 前進</button>
                 <button class="cmd-btn" style="background:#4dd0e1;" onclick="g1Add('LEFT')">↩️ 左轉</button>
@@ -912,12 +963,12 @@ function initGame1(lIdx) {
                 <button class="cmd-btn" style="background:#b388ff;" onclick="g1Add('LOOP_4')">🔄 重複 4 次</button>
                 <button class="cmd-btn" style="background:#ea80fc;" onclick="g1Add('END_LOOP')">🔚 結束重複</button>
             </div>
-            <div style="display:flex; gap:5px; margin-bottom:6px;">
-                <button class="cmd-btn" style="background:#69f0ae; flex:2;" onclick="g1Run()">▶️ 執行</button>
+            <div style="display:flex; gap:5px; margin-bottom:7px;">
+                <button class="cmd-btn" style="background:#69f0ae; flex:1.6;" onclick="g1Run()">▶️ 執行</button>
                 <button class="cmd-btn" style="background:#ffb74d; flex:1;" onclick="g1Pop()">⌫ 退回</button>
                 <button class="cmd-btn" style="background:#ff80ab; flex:1;" onclick="g1Clear()">🗑️ 清空</button>
             </div>
-            <div style="font-size:0.82rem; color:#ffd54f; font-weight:bold;" id="g1CmdHeader"></div>
+            <div style="font-size:0.8rem; color:#ffd54f; font-weight:bold; text-align:left;" id="g1CmdHeader"></div>
             <div class="cmd-list" id="g1CmdList"></div>
         </div>
     </div>`;
@@ -935,8 +986,8 @@ function g1CanvasClick(e) {
     if (appState.currentLevel !== 20 || g1State.timer) return;
     sfxClick();
     const r = e.target.getBoundingClientRect();
-    const gx = Math.floor((e.clientX - r.left) * (420 / r.width) / 60);
-    const gy = Math.floor((e.clientY - r.top) * (420 / r.height) / 60);
+    const gx = Math.floor((e.clientX - r.left) * (G1_CANVAS_SIZE / r.width) / G1_CS);
+    const gy = Math.floor((e.clientY - r.top) * (G1_CANVAS_SIZE / r.height) / G1_CS);
     if (gx >= 0 && gx < 7 && gy >= 0 && gy < 7) {
         const lvl = G1_LEVELS[20];
         let row = lvl.grid[gy].split("");
@@ -972,8 +1023,8 @@ function g1ResetBoard() {
 
 function g1Draw() {
     const cvs = document.getElementById("g1Canvas"); if (!cvs) return;
-    const ctx = cvs.getContext("2d"), cs = 60;
-    ctx.clearRect(0, 0, 420, 420);
+    const ctx = cvs.getContext("2d"), cs = G1_CS, half = cs / 2;
+    ctx.clearRect(0, 0, G1_CANVAS_SIZE, G1_CANVAS_SIZE);
     const icons = {1:"🪨", 2:"💎", 3:"🛸", 5:"🔘", 6:"🌀"};
     for (let y = 0; y < 7; y++) {
         for (let x = 0; x < 7; x++) {
@@ -981,73 +1032,74 @@ function g1Draw() {
             ctx.fillStyle = (cell === 4 && g1State.laserOn) ? "#3b1222" : ((x+y)%2===0 ? "#141827" : "#0e111d");
             ctx.fillRect(x1, y1, cs, cs);
             ctx.strokeStyle = "#232942"; ctx.strokeRect(x1, y1, cs, cs);
-            ctx.font = "25px 'Segoe UI Emoji', sans-serif";
+            ctx.font = "30px 'Segoe UI Emoji', sans-serif";
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
             if (icons[cell]) {
-                ctx.fillText(icons[cell], x1+30, y1+30);
+                ctx.fillText(icons[cell], x1 + half, y1 + half);
             } else if (cell === 4 && g1State.laserOn) {
-                ctx.strokeStyle = "#ff4081"; ctx.lineWidth = 3;
-                ctx.beginPath(); ctx.moveTo(x1+4, y1+30); ctx.lineTo(x1+cs-4, y1+30); ctx.stroke();
+                ctx.strokeStyle = "#ff4081"; ctx.lineWidth = 3.5;
+                ctx.beginPath(); ctx.moveTo(x1+4, y1 + half); ctx.lineTo(x1+cs-4, y1 + half); ctx.stroke();
                 ctx.lineWidth = 1;
-                ctx.fillText("⚡", x1+30, y1+30);
+                ctx.fillText("⚡", x1 + half, y1 + half);
             }
         }
     }
 
-    // 繪製局部步進軌跡虛線 (直觀看到機器人走過的路徑)
+    // 繪製局部步進軌跡虛線
     if (g1State.trace.length > 1) {
         ctx.save();
-        ctx.strokeStyle = "rgba(100, 181, 246, 0.65)";
-        ctx.lineWidth = 4;
-        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = "rgba(100, 181, 246, 0.7)";
+        ctx.lineWidth = 4.5;
+        ctx.setLineDash([7, 5]);
         for (let i = 0; i < g1State.trace.length - 1; i++) {
             const [x1, y1] = g1State.trace[i];
             const [x2, y2] = g1State.trace[i+1];
             if (Math.abs(x1 - x2) + Math.abs(y1 - y2) === 1) {
                 ctx.beginPath();
-                ctx.moveTo(x1 * cs + 30, y1 * cs + 30);
-                ctx.lineTo(x2 * cs + 30, y2 * cs + 30);
+                ctx.moveTo(x1 * cs + half, y1 * cs + half);
+                ctx.lineTo(x2 * cs + half, y2 * cs + half);
                 ctx.stroke();
             }
         }
         ctx.restore();
     }
 
-    // 繪製單格局部動作回饋 (僅在觸發動作的那一格顯示小光圈與標籤)
+    // 繪製單格局部動作回饋
     if (g1State.localFx) {
         const fx = g1State.localFx;
-        const cx = fx.x * cs + 30, cy = fx.y * cs + 30;
+        const cx = fx.x * cs + half;
         ctx.save();
         ctx.strokeStyle = fx.color;
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 3.5;
         ctx.strokeRect(fx.x * cs + 3, fx.y * cs + 3, cs - 6, cs - 6);
         if (fx.text) {
-            ctx.fillStyle = "rgba(9, 11, 16, 0.85)";
-            ctx.fillRect(cx - 26, fyTop(fx.y, cs), 52, 18);
+            const tagY = fyTop(fx.y, cs);
+            ctx.fillStyle = "rgba(9, 11, 16, 0.88)";
+            ctx.fillRect(cx - 28, tagY, 56, 20);
             ctx.fillStyle = fx.color;
-            ctx.font = "bold 11px 'Microsoft JhengHei'";
+            ctx.font = "bold 12px 'Microsoft JhengHei'";
             ctx.textAlign = "center"; ctx.textBaseline = "middle";
-            ctx.fillText(fx.text, cx, fyTop(fx.y, cs) + 9);
+            ctx.fillText(fx.text, cx, tagY + 10);
         }
         ctx.restore();
     }
 
     // 繪製機器人與清楚的面向箭頭
-    const rx = g1State.rx * cs + 30, ry = g1State.ry * cs + 30;
-    ctx.beginPath(); ctx.arc(rx, ry, 20, 0, Math.PI*2);
+    const rx = g1State.rx * cs + half, ry = g1State.ry * cs + half;
+    ctx.beginPath(); ctx.arc(rx, ry, 24, 0, Math.PI*2);
     ctx.fillStyle = "#29b6f6"; ctx.fill(); ctx.lineWidth = 2.5; ctx.strokeStyle = "#fff"; ctx.stroke();
-    ctx.font = "21px 'Segoe UI Emoji', sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.font = "25px 'Segoe UI Emoji', sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText("🤖", rx, ry);
 
     const dirs = [[0,-1],[1,0],[0,1],[-1,0]], arrs = ["▲","▶","▼","◀"];
     const dx = dirs[g1State.rdir][0], dy = dirs[g1State.rdir][1];
-    ctx.beginPath(); ctx.arc(rx+dx*21, ry+dy*21, 8, 0, Math.PI*2);
+    ctx.beginPath(); ctx.arc(rx+dx*25, ry+dy*25, 9, 0, Math.PI*2);
     ctx.fillStyle = "#ff4081"; ctx.fill();
-    ctx.font = "bold 10px Consolas"; ctx.fillStyle = "#fff";
-    ctx.fillText(arrs[g1State.rdir], rx+dx*21, ry+dy*21);
+    ctx.font = "bold 11px Consolas"; ctx.fillStyle = "#fff";
+    ctx.fillText(arrs[g1State.rdir], rx+dx*25, ry+dy*25);
 }
 
-function fyTop(gy, cs) { return gy > 0 ? (gy * cs - 10) : (gy * cs + cs - 18); }
+function fyTop(gy, cs) { return gy > 0 ? (gy * cs - 11) : (gy * cs + cs - 20); }
 
 function g1Add(c) { if (!g1State.timer && g1State.cmds.length < 24) { sfxClick(); g1State.cmds.push(c); g1RenderCmds(-1); } }
 function g1Pop() { if (!g1State.timer && g1State.cmds.length > 0) { sfxClick(); g1State.cmds.pop(); g1RenderCmds(-1); } }
@@ -1185,7 +1237,7 @@ function g1Run() {
 }
 
 // ============================================================================
-// 遊戲 2：⚡ 光子邏輯閘 (含開關局部聚焦框 + 導線電流節點指示)
+// 遊戲 2：⚡ 光子邏輯閘 (居中放大畫布 + 緊湊控制列)
 // ============================================================================
 let g2State = { inVals: [0,0,0,0], clicks: 0, finalOut: 0, lastChangedIdx: -1 };
 
@@ -1195,14 +1247,14 @@ function initGame2(lIdx) {
     document.getElementById("lvlTitle").innerText = "⚡ " + lvl.name;
     document.getElementById("lvlDesc").innerText = lvl.desc;
     g2State.inVals = [0,0,0,0]; g2State.clicks = 0; g2State.lastChangedIdx = -1;
-    document.getElementById("stageContent").innerHTML = `<div style="text-align:center;">
-        <canvas id="g2Canvas" width="700" height="360"></canvas>
-        <div class="status-bar" id="g2Status" style="text-align:left; margin-bottom:8px;">
+    document.getElementById("stageContent").innerHTML = `<div style="max-width:800px; margin:0 auto; text-align:center;">
+        <canvas id="g2Canvas" class="wide-canvas" width="700" height="360"></canvas>
+        <div class="status-bar" id="g2Status" style="margin-bottom:8px;">
             ⚡ 請點擊左側開關切換 0 與 1，觀察邏輯閘輸出變化。
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
             <div style="font-size:0.84rem; color:#4dd0e1;">💡 【AND】全1才1 ｜ 【OR】有1就1 ｜ 【XOR】不同才1 ｜ 【NAND】不全1就1 ｜ 【NOR】全0才1</div>
-            <button class="cmd-btn" style="background:#69f0ae; padding:9px 20px; font-size:0.95rem;" onclick="g2CheckWin()">✅ 驗證並啟動核心</button>
+            <button class="cmd-btn" style="background:#69f0ae; padding:8px 18px; font-size:0.9rem;" onclick="g2CheckWin()">✅ 驗證並啟動核心</button>
         </div>
     </div>`;
     document.getElementById("g2Canvas").addEventListener("click", g2CanvasClick);
@@ -1234,7 +1286,6 @@ function g2EvalAndDraw() {
         ctx.strokeStyle = v ? "#69f0ae" : "#37474f"; ctx.lineWidth = v ? 4.5 : 2.5;
         const mx = (x1+x2)/2;
         ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(mx,y1); ctx.lineTo(mx,y2); ctx.lineTo(x2,y2); ctx.stroke();
-        // 局部電流信號節點
         if (v) {
             ctx.fillStyle = "#ffd54f";
             ctx.beginPath(); ctx.arc(mx, (y1+y2)/2, 4.5, 0, Math.PI*2); ctx.fill();
@@ -1268,7 +1319,6 @@ function g2EvalAndDraw() {
         ctx.fillStyle = v ? "#111" : "#fff"; ctx.font = "bold 14px 'Microsoft JhengHei'";
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
         ctx.fillText("開關 " + ["A","B","C","D"][i] + " = " + v, 85, y);
-        // 剛點擊的開關局部指示小箭頭
         if (isLast) {
             ctx.fillStyle = "#ffd54f"; ctx.font = "bold 12px sans-serif";
             ctx.fillText("▶", 14, y);
@@ -1342,7 +1392,7 @@ function g2CheckWin() {
 }
 
 // ============================================================================
-// 遊戲 3：⚖️ 能量排序室 (含兩瓶交換局部雙向弧線箭頭 `⇄` 指示)
+// 遊戲 3：⚖️ 能量排序室 (居中放大畫布 + 雙瓶交換局部弧線箭頭)
 // ============================================================================
 let g3State = { arr: [], sel: null, swaps: 0, lastSwapPair: null };
 
@@ -1359,10 +1409,10 @@ function initGame3(lIdx) {
         <button class="brush-btn" onclick="g3ToggleAdj()">相鄰限制: ${lvl.adj?'開':'關'}</button>
     </div>` : "";
 
-    document.getElementById("stageContent").innerHTML = `<div style="text-align:center;">
-        <canvas id="g3Canvas" width="700" height="340"></canvas>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-            <div class="status-bar" id="g3Status" style="margin:0;">已交換：0 次 （點擊兩瓶能量管交換位置）</div>
+    document.getElementById("stageContent").innerHTML = `<div style="max-width:800px; margin:0 auto; text-align:center;">
+        <canvas id="g3Canvas" class="wide-canvas" width="700" height="340"></canvas>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:8px;">
+            <div class="status-bar" id="g3Status" style="margin:0; flex:1;">已交換：0 次 （點擊兩瓶能量管交換位置）</div>
             <button class="cmd-btn" style="background:#ffb74d; padding:7px 14px;" onclick="sfxClick(); initGame3(${lIdx})">🔄 重置</button>
         </div>
         ${customHtml}
@@ -1398,7 +1448,6 @@ function g3Draw(code) {
     ctx.fillStyle = "#69f0ae"; ctx.font = "bold 14px Consolas"; ctx.textAlign = "center";
     ctx.fillText("🎯 目標排列：[ " + target.join(", ") + " ]", 350, 22);
 
-    // 繪製剛交換兩瓶之間的局部弧線指示箭頭
     if (g3State.lastSwapPair) {
         const [i1, i2] = g3State.lastSwapPair;
         const cx1 = sx + i1 * w + w / 2;
@@ -1483,7 +1532,7 @@ function g3CanvasClick(e) {
 }
 
 // ============================================================================
-// 遊戲 4：🗼 星際河內塔 (含柱間移動局部弧線軌跡箭頭)
+// 遊戲 4：🗼 星際河內塔 (居中放大畫布 + 柱間移動局部弧線軌跡)
 // ============================================================================
 let g4State = { pegs: [], sel: null, moves: 0, totalDisks: 0, lastMoveArc: null };
 
@@ -1506,10 +1555,10 @@ function initGame4(lIdx) {
         <button class="brush-btn" onclick="g4Custom(null,'ADJ')">相鄰限制</button>
     </div>` : "";
 
-    document.getElementById("stageContent").innerHTML = `<div style="text-align:center;">
-        <canvas id="g4Canvas" width="700" height="340"></canvas>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-            <div class="status-bar" id="g4Status" style="margin:0;">步數：0 步 （點擊來源柱取出頂端環，再點目標柱放入）</div>
+    document.getElementById("stageContent").innerHTML = `<div style="max-width:800px; margin:0 auto; text-align:center;">
+        <canvas id="g4Canvas" class="wide-canvas" width="700" height="340"></canvas>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:8px;">
+            <div class="status-bar" id="g4Status" style="margin:0; flex:1;">步數：0 步 （點擊來源柱取出頂端環，再點目標柱放入）</div>
             <button class="cmd-btn" style="background:#ffb74d; padding:7px 14px;" onclick="sfxClick(); initGame4(${lIdx})">🔄 重置</button>
         </div>
         ${customHtml}
@@ -1536,7 +1585,6 @@ function g4Draw(code) {
     const lvl = G4_LEVELS[appState.currentLevel], numP = g4State.pegs.length, sp = Math.floor(700 / numP);
     const cols = ["#ff80ab","#ffb74d","#ffd54f","#69f0ae","#64b5f6","#b388ff"], pN = ["A 柱","B 柱","C 柱","D 柱"];
 
-    // 繪製上一步移動的局部拋物線軌跡
     if (g4State.lastMoveArc) {
         const {src, dst, disk} = g4State.lastMoveArc;
         const x1 = sp * src + sp / 2, x2 = sp * dst + sp / 2, midX = (x1 + x2) / 2;
@@ -1618,7 +1666,7 @@ function g4CanvasClick(e) {
 }
 
 // ============================================================================
-// 遊戲 5：🎨 像素解碼器 (含單格局部聚焦框 + 二進位權重加減提示)
+// 遊戲 5：🎨 像素解碼器 (居中放大畫布 + 單格聚焦框與權重加減提示)
 // ============================================================================
 let g5State = { target: [], player: [], editTarget: false, mistakes: 0, lastCell: null };
 
@@ -1632,10 +1680,10 @@ function initGame5(lIdx) {
     g5State.editTarget = false; g5State.mistakes = 0; g5State.lastCell = null;
 
     const customBtn = (lIdx === 20) ? `<button class="cmd-btn" id="g5CreatorBtn" style="background:#ff80ab; padding:7px 14px;" onclick="g5ToggleCreator()">🎨 繪製自訂謎題</button>` : "";
-    document.getElementById("stageContent").innerHTML = `<div style="text-align:center;">
-        <canvas id="g5Canvas" width="700" height="375"></canvas>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-            <div class="status-bar" id="g5Status" style="margin:0;">💡 點擊方格切換 0 與 1，當整列或整行密碼吻合時會變成綠色 ✅！</div>
+    document.getElementById("stageContent").innerHTML = `<div style="max-width:800px; margin:0 auto; text-align:center;">
+        <canvas id="g5Canvas" class="wide-canvas" width="700" height="375"></canvas>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px; gap:8px;">
+            <div class="status-bar" id="g5Status" style="margin:0; flex:1;">💡 點擊方格切換 0 與 1，當整列或整行密碼吻合時會變成綠色 ✅！</div>
             <div style="display:flex; gap:6px;">${customBtn}<button class="cmd-btn" style="background:#ffb74d; padding:7px 14px;" onclick="sfxClick(); initGame5(${lIdx})">🗑️ 清空</button></div>
         </div>
     </div>`;
@@ -1698,7 +1746,6 @@ function g5Draw() {
             ctx.fillStyle = v ? "#111" : "#546e7a"; ctx.font = "bold 15px Consolas";
             ctx.fillText(String(v), x1+cs/2, y1+cs/2);
 
-            // 在剛點擊的那一格右上角顯示局部權重變化提示 (如 +16 或 -16)
             if (isLast) {
                 ctx.fillStyle = v ? "#ffd54f" : "#ff80ab";
                 ctx.font = "bold 10px Consolas";
@@ -1755,5 +1802,5 @@ switchGame(0);
 </body>
 </html>'''
 
-components.html(GAME_HTML, height=820, scrolling=True)
+components.html(GAME_HTML, height=900, scrolling=True)
 # === 檔案結束 (請確認複製到此行) ===
